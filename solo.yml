@@ -1,0 +1,24 @@
+name: treedocs
+icon: null
+processes:
+  swift run:
+    command: swift run
+    working_dir: null
+    auto_start: false
+    auto_restart: false
+    restart_when_changed: []
+    env: {}
+  swift test:
+    command: swift test
+    working_dir: null
+    auto_start: false
+    auto_restart: false
+    restart_when_changed: []
+    env: {}
+  swift build:
+    command: swift build
+    working_dir: null
+    auto_start: false
+    auto_restart: false
+    restart_when_changed: []
+    env: {}
