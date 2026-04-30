@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:treedocs}",
+            "name": "Debug treedocs",
+            "target": "treedocs",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug treedocs"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:treedocs}",
+            "name": "Release treedocs",
+            "target": "treedocs",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release treedocs"
+        }
+    ]
+}
