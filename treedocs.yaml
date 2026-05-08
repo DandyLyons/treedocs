@@ -1,0 +1,58 @@
+project:
+  last_updated: '2026-05-08'
+  name: treedocs
+  version: 0.0.0
+signature: sha256:4e5fbf044cba54b8bee63102833f5de7acd587e00f158caed1167c83545fd559
+tree:
+  .gitignore: ''
+  .vscode:
+    _doc: ''
+    launch.json: ''
+  AGENTS.md: ''
+  DOCS:
+    InitialSpecs.md: ''
+    _doc: ''
+  LICENSE: ''
+  Package.resolved: ''
+  Package.swift: ''
+  README.md: ''
+  Sources:
+    _doc: ''
+    treedocs:
+      Commands:
+        CheckCommand.swift: ''
+        Common.swift: ''
+        InitCommand.swift: ''
+        InspectCommand.swift: ''
+        LsCommand.swift: ''
+        PathCommand.swift: ''
+        SyncCommand.swift: ''
+        UpdateCommand.swift: ''
+        _doc: ''
+      Core:
+        ConfigLoader.swift: ''
+        IgnoreMatcher.swift: ''
+        LinkResolver.swift: ''
+        PathUtilities.swift: ''
+        TreeOperations.swift: ''
+        TreeRenderer.swift: ''
+        TreeScanner.swift: ''
+        TreedocsFileStore.swift: ''
+        TreedocsService.swift: ''
+        _doc: ''
+      Models:
+        TreedocsConfig.swift: ''
+        TreedocsFile.swift: ''
+        _doc: ''
+      TreeDocs.swift: ''
+      _doc: ''
+  Tests:
+    _doc: ''
+    treedocsTests:
+      IgnoreMatcherTests.swift: ''
+      ScannerAndSignatureTests.swift: ''
+      SchemaAndConfigTests.swift: ''
+      TestSupport.swift: ''
+      WorkflowTests.swift: ''
+      _doc: ''
+  solo.yml: ''

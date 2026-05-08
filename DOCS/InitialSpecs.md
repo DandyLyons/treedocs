@@ -1,5 +1,7 @@
 # Treedocs (TD)
 `treedocs` is a CLI tool that generates and maintains a version-controlled, YAML-based architectural map of a repository by mirroring the file system and mapping paths to human-readable descriptions.
+
+> Implementation note: this document remains the design reference. The current Swift package implements the root subcommands `init`, `sync`, `check`, `inspect`, `update`, `ls`, and `path`, plus config loading, ignore matching, signature generation, link resolution, and Swift Testing coverage. Where the live CLI differs from this draft, prefer the source in `Sources/treedocs/`.
 ## 1. Overview
 `treedocs` is a CLI tool designed to maintain a high-level "map" of a software repository. Unlike a standard `tree` command, `treedocs` maps file paths to human-readable purposes, stored in a version-controlled `treedocs.yaml` file. It serves as "Architectural Documentation as Code."
 ## 2. Configuration & Hierarchy
@@ -22,11 +24,18 @@ Defined in the `config.yaml` files:
 3. `./.treedocs/.treedocs_ignore`.
 ## 3. The `treedocs.yaml` Schema
 The `treedocs.yaml` file contains the documentation tree and critical project-specific metadata.
+
+Requirement: the `treedocs.yaml` format must be defined by a JSON Schema so editors, CI jobs, tests, and future tooling can validate the YAML document against the same structural contract.
 ### 3.1 Root Level Keys
 - **`project`**: Metadata about the repository (e.g., name, version, maintainer).
 - **`overrides`**: Local documentation rules that override the global `config.yaml` for this specific repository.
 - **`signature`**: A system-generated checksum or state-hash used to detect drift quickly during `check`.
 - **`tree`**: The nested object representing the file system hierarchy.
+### 3.1.1 Schema Definition
+- The canonical schema should be stored as a JSON Schema document in the repository, for example `Schema/treedocs.schema.json` or `DOCS/treedocs.schema.json`.
+- Validation should run against parsed YAML data, not raw YAML text, so `treedocs.yaml` remains YAML while the contract is expressed in JSON Schema.
+- The schema should cover root keys, project metadata, override values, signature format, tree entry variants, reserved keys (`_doc`, `_link`), descriptions, and references.
+- The schema should be usable outside the Swift CLI by editors, CI, and other agents.
 ### 3.2 Tree Value Types
 To support both simple and deep documentation, a path's value in the `tree` can be:
 1. **A String**: For simple, one-line descriptions.
@@ -65,7 +74,7 @@ tree:
 ```
 ## 4. Command Definitions
 ### 4.1 `treedocs init`
-Walks the file system and generates a `treedocs.yaml`. It populates the `tree` key and generates an initial `signature`.
+Walks the file system and generates a `treedocs.yaml`. It populates the `tree` key, generates an initial `signature`, and initializes `project.name`, `project.version`, and `project.last_updated`.
 ### 4.2 `treedocs sync`
 Reconciles disk state with the `tree` key.
 - **Signature Update**: Recalculates and updates the `signature` key after a successful sync.
@@ -78,8 +87,16 @@ Non-interactive validation.
 `treedocs inspect <path> [--recursive]` returns the description, resolves links, and lists all associated `references`.
 ### 4.5 `treedocs update`
 `treedocs update <path> "<description>"` modifies the entry inside the `tree` key and updates the `signature`.
+
+> ❗ The current CLI also supports reference and link mutation flags:
+>- `--add-reference`
+>- `--remove-reference`
+>- `--link`
+>- `--clear-link`
 ### 4.6 `treedocs ls`
 Visualizes the `tree` with documentation inline. If a file has `references`, an indicator (like `[+]` or `🔗`) is shown.
+
+> ❗ The current CLI renders subtree output by accepting an optional positional path argument, and its formatter respects `max_description_length`, `indent_size`, and `align_columns`.
 ## 5. Advanced Features
 ### 5.1 Alias (`ln`) & External Handling
 Supports internal relative links and external URLs via the `_link` key.
@@ -87,6 +104,8 @@ Supports internal relative links and external URLs via the `_link` key.
 Defined in `.treedocs/config.yaml` to automatically document files matching specific patterns.
 ### 5.3 Shell Integration
 Search-based navigation: `cd $(treedocs path <query>)`.
+
+> ❗ The current implementation matches against both normalized paths and entry descriptions and returns a single raw path on success.
 ## 6. What Makes `treedocs` Unique?
 ### 6.1 Strict Filesystem Mirroring
 Maintains a 1:1 structural mirror of the repository, preventing the "map" from drifting from reality.
