@@ -3,8 +3,8 @@ import Testing
 
 @Suite("Scanner and Signature")
 struct ScannerAndSignatureTests {
-    @Test("Scanner respects standard excludes, .gitignore, and .treedocs ignore files")
-    func scannerIgnoresConfiguredPaths() throws {
+    @Test
+    func `Scanner respects standard excludes, .gitignore, and .treedocs ignore files`() throws {
         let workspace = try TestWorkspace()
         try workspace.createDirectory("Sources")
         try workspace.writeFile("Sources/App.swift", contents: "print(\"ok\")")
@@ -30,8 +30,8 @@ struct ScannerAndSignatureTests {
         #expect(TreeOperations.entry(at: "Sources/App.swift", in: scan.tree)?.description == "")
     }
 
-    @Test("Ignore matcher supports negated patterns after broader excludes")
-    func scannerSupportsNegationPatterns() throws {
+    @Test
+    func `Ignore matcher supports negated patterns after broader excludes`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile(".gitignore", contents: """
         *.log
@@ -48,8 +48,8 @@ struct ScannerAndSignatureTests {
         #expect(paths.contains("keep.log"))
     }
 
-    @Test("Signature is deterministic and changes on structural updates")
-    func signatureDeterminism() throws {
+    @Test
+    func `Signature is deterministic and changes on structural updates`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("README.md", contents: "Hello")
         try workspace.createDirectory("Sources")

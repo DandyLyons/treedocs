@@ -6,8 +6,8 @@ import Yams
 
 @Suite("Schema and Config")
 struct SchemaAndConfigTests {
-    @Test("YAML schema round-trips strings, objects, nested folders, links, and references")
-    func schemaRoundTrip() throws {
+    @Test
+    func `YAML schema round-trips strings, objects, nested folders, links, and references`() throws {
         let yaml = """
         project:
           name: Example
@@ -44,8 +44,8 @@ struct SchemaAndConfigTests {
         #expect(roundTrip == parsed)
     }
 
-    @Test("Config precedence applies defaults, global config, project config, and state overrides")
-    func configPrecedence() throws {
+    @Test
+    func `Config precedence applies defaults, global config, project config, and state overrides`() throws {
         let workspace = try TestWorkspace()
         try workspace.createDirectory(".treedocs")
         try workspace.writeFile(".treedocs/config.yaml", contents: """
@@ -97,8 +97,8 @@ struct SchemaAndConfigTests {
         #expect(loaded.ignorePatterns.contains("ignored-local"))
     }
 
-    @Test("Empty YAML produces a default TreedocsFile")
-    func emptyYAML() throws {
+    @Test
+    func `Empty YAML produces a default TreedocsFile`() throws {
         let file = try TreedocsFile.load(from: "")
         #expect(file.project.isEmpty)
         #expect(file.overrides == nil)
@@ -106,8 +106,8 @@ struct SchemaAndConfigTests {
         #expect(file.tree.isEmpty)
     }
 
-    @Test("YAML with only project section parses correctly")
-    func partialYAMLProjectOnly() throws {
+    @Test
+    func `YAML with only project section parses correctly`() throws {
         let yaml = """
         project:
           name: Test
@@ -119,16 +119,16 @@ struct SchemaAndConfigTests {
         #expect(file.tree.isEmpty)
     }
 
-    @Test("YAML with only signature parses correctly")
-    func partialYAMLSignatureOnly() throws {
+    @Test
+    func `YAML with only signature parses correctly`() throws {
         let yaml = "signature: sha256:abc123\n"
         let file = try TreedocsFile.load(from: yaml)
         #expect(file.signature == "sha256:abc123")
         #expect(file.tree.isEmpty)
     }
 
-    @Test("TreedocsFile default initializer produces empty state")
-    func defaultTreedocsFile() {
+    @Test
+    func `TreedocsFile default initializer produces empty state`() {
         let file = TreedocsFile()
         #expect(file.project.isEmpty)
         #expect(file.overrides == nil)
@@ -136,15 +136,15 @@ struct SchemaAndConfigTests {
         #expect(file.tree.isEmpty)
     }
 
-    @Test("EntryDocumentation round-trips as simple string")
-    func entryDocumentationStringRoundTrip() {
+    @Test
+    func `EntryDocumentation round-trips as simple string`() {
         let doc = EntryDocumentation(description: "Hello world")
         #expect(doc.toYAMLValue() as? String == "Hello world")
         #expect(!doc.isEmpty)
     }
 
-    @Test("EntryDocumentation round-trips as mapping with references")
-    func entryDocumentationMappingRoundTrip() {
+    @Test
+    func `EntryDocumentation round-trips as mapping with references`() {
         let doc = EntryDocumentation(description: "Hello", references: ["ref1", "ref2"])
         let value = doc.toYAMLValue() as? [String: Any]
         #expect(value != nil)
@@ -152,16 +152,16 @@ struct SchemaAndConfigTests {
         #expect(value?["references"] as? [String] == ["ref1", "ref2"])
     }
 
-    @Test("EntryDocumentation with only references round-trips")
-    func entryDocumentationReferencesOnly() {
+    @Test
+    func `EntryDocumentation with only references round-trips`() {
         let doc = EntryDocumentation(references: ["ref1"])
         let value = doc.toYAMLValue() as? [String: Any]
         #expect(value?["description"] == nil)
         #expect(value?["references"] as? [String] == ["ref1"])
     }
 
-    @Test("EntryDocumentation isEmpty for nil description and no references")
-    func entryDocumentationEmptyCheck() {
+    @Test
+    func `EntryDocumentation isEmpty for nil description and no references`() {
         let doc = EntryDocumentation()
         #expect(doc.isEmpty)
 
@@ -172,15 +172,15 @@ struct SchemaAndConfigTests {
         #expect(!docWithRefs.isEmpty)
     }
 
-    @Test("EntryDocumentation fromYAML parses string")
-    func entryDocumentationFromString() throws {
+    @Test
+    func `EntryDocumentation fromYAML parses string`() throws {
         let doc = try EntryDocumentation.fromYAML("Some description")
         #expect(doc?.description == "Some description")
         #expect(doc?.references.isEmpty == true)
     }
 
-    @Test("EntryDocumentation fromYAML parses mapping")
-    func entryDocumentationFromMapping() throws {
+    @Test
+    func `EntryDocumentation fromYAML parses mapping`() throws {
         let yaml = """
         description: API docs
         references:
@@ -192,22 +192,22 @@ struct SchemaAndConfigTests {
         #expect(doc?.references == ["docs/api.md"])
     }
 
-    @Test("EntryDocumentation fromYAML returns nil for nil input")
-    func entryDocumentationNilInput() throws {
+    @Test
+    func `EntryDocumentation fromYAML returns nil for nil input`() throws {
         let doc = try EntryDocumentation.fromYAML(nil)
         #expect(doc == nil)
     }
 
-    @Test("TreeEntry as simple string leaf")
-    func treeEntryStringLeaf() throws {
+    @Test
+    func `TreeEntry as simple string leaf`() throws {
         let entry = try TreeEntry.fromYAML("Simple description")
         #expect(entry.description == "Simple description")
         #expect(!entry.isDirectory)
         #expect(entry.children.isEmpty)
     }
 
-    @Test("TreeEntry as mapping with description")
-    func treeEntryMappingWithDescription() throws {
+    @Test
+    func `TreeEntry as mapping with description`() throws {
         let yaml = """
         description: A file
         _link: somewhere
@@ -219,8 +219,8 @@ struct SchemaAndConfigTests {
         #expect(!entry.isDirectory)
     }
 
-    @Test("TreeEntry as directory with children")
-    func treeEntryDirectory() throws {
+    @Test
+    func `TreeEntry as directory with children`() throws {
         let yaml = """
         subdir:
           file.txt: A nested file
@@ -233,23 +233,23 @@ struct SchemaAndConfigTests {
         #expect(entry.children["subdir"] != nil)
     }
 
-    @Test("TreeEntry toYAMLValue for leaf with description")
-    func treeEntryToYAMLLeaf() {
+    @Test
+    func `TreeEntry toYAMLValue for leaf with description`() {
         let entry = TreeEntry(description: "Leaf file")
         let value = entry.toYAMLValue()
         #expect(value as? String == "Leaf file")
     }
 
-    @Test("TreeEntry toYAMLValue for leaf with link")
-    func treeEntryToYAMLLeafWithLink() {
+    @Test
+    func `TreeEntry toYAMLValue for leaf with link`() {
         let entry = TreeEntry(description: "Leaf", link: "target")
         let value = entry.toYAMLValue() as? [String: Any]
         #expect(value?["description"] as? String == "Leaf")
         #expect(value?["_link"] as? String == "target")
     }
 
-    @Test("TreeEntry toYAMLValue for directory")
-    func treeEntryToYAMLDirectory() {
+    @Test
+    func `TreeEntry toYAMLValue for directory`() {
         let entry = TreeEntry(
             documentation: EntryDocumentation(description: "Dir docs"),
             link: "target",
@@ -262,8 +262,8 @@ struct SchemaAndConfigTests {
         #expect(value?["file.swift"] != nil)
     }
 
-    @Test("TreedocsConfig toYAMLValue omits nil fields")
-    func configToYAMLOmitsNil() {
+    @Test
+    func `TreedocsConfig toYAMLValue omits nil fields`() {
         let config = TreedocsConfig(indentSize: 4, theme: "dark")
         let value = config.toYAMLValue()
         #expect(value["indent_size"] as? Int == 4)
@@ -272,8 +272,8 @@ struct SchemaAndConfigTests {
         #expect(value["use_gitignore"] == nil)
     }
 
-    @Test("TreedocsConfig defaults have expected values")
-    func configDefaults() {
+    @Test
+    func `TreedocsConfig defaults have expected values`() {
         let defaults = TreedocsConfig.defaults
         #expect(defaults.resolvedExclude.isEmpty)
         #expect(defaults.resolvedUseGitignore == true)
@@ -285,15 +285,15 @@ struct SchemaAndConfigTests {
         #expect(defaults.resolvedIcons == false)
     }
 
-    @Test("TreedocsConfig merging nil returns self")
-    func configMergingNil() {
+    @Test
+    func `TreedocsConfig merging nil returns self`() {
         let config = TreedocsConfig(indentSize: 8)
         let merged = config.merging(nil)
         #expect(merged == config)
     }
 
-    @Test("TreedocsConfig merging only overrides nil fields")
-    func configMergingOverridesNilFields() {
+    @Test
+    func `TreedocsConfig merging only overrides nil fields`() {
         let base = TreedocsConfig(indentSize: 2, theme: "light")
         let other = TreedocsConfig(indentSize: 4, alignColumns: true)
         let merged = base.merging(other)
@@ -302,8 +302,8 @@ struct SchemaAndConfigTests {
         #expect(merged.resolvedAlignColumns == true)
     }
 
-    @Test("TreedocsConfig merging fully replaces unset fields")
-    func configMergingAllFields() {
+    @Test
+    func `TreedocsConfig merging fully replaces unset fields`() {
         let base = TreedocsConfig()
         let other = TreedocsConfig(
             exclude: ["tmp"],
@@ -332,16 +332,16 @@ struct SchemaAndConfigTests {
         #expect(merged.aiModel == "gpt-4")
     }
 
-    @Test("parseString handles various input types")
-    func parseStringVariants() {
+    @Test
+    func `parseString handles various input types`() {
         #expect(parseString("hello") == "hello")
         #expect(parseString(NSNumber(value: 42)) == "42")
         #expect(parseString(nil) == nil)
         #expect(parseString(123) == "123")
     }
 
-    @Test("parseBool handles various input types")
-    func parseBoolVariants() {
+    @Test
+    func `parseBool handles various input types`() {
         #expect(parseBool(true) == true)
         #expect(parseBool(false) == false)
         #expect(parseBool(NSNumber(value: 1)) == true)
@@ -356,8 +356,8 @@ struct SchemaAndConfigTests {
         #expect(parseBool(nil) == nil)
     }
 
-    @Test("parseInt handles various input types")
-    func parseIntVariants() {
+    @Test
+    func `parseInt handles various input types`() {
         #expect(parseInt(42) == 42)
         #expect(parseInt(NSNumber(value: 99)) == 99)
         #expect(parseInt("123") == 123)
@@ -365,16 +365,16 @@ struct SchemaAndConfigTests {
         #expect(parseInt(nil) == nil)
     }
 
-    @Test("parseStringArray handles nested types")
-    func parseStringArrayVariants() {
+    @Test
+    func `parseStringArray handles nested types`() {
         #expect(parseStringArray(["a", "b"]) == ["a", "b"])
         #expect(parseStringArray([1, 2]) == ["1", "2"])
         #expect(parseStringArray(nil) == nil)
         #expect(parseStringArray("not-array") == nil)
     }
 
-    @Test("parseSeverity recognizes valid values")
-    func parseSeverityVariants() {
+    @Test
+    func `parseSeverity recognizes valid values`() {
         #expect(parseSeverity("error") == .error)
         #expect(parseSeverity("warn") == .warn)
         #expect(parseSeverity("ERROR") == .error)
@@ -383,8 +383,8 @@ struct SchemaAndConfigTests {
         #expect(parseSeverity(nil) == nil)
     }
 
-    @Test("TreedocsConfig fromYAML parses all fields")
-    func configFromYAMLAllFields() throws {
+    @Test
+    func `TreedocsConfig fromYAML parses all fields`() throws {
         let yaml = """
         exclude:
           - tmp
@@ -416,42 +416,42 @@ struct SchemaAndConfigTests {
         #expect(config?.aiModel == "gpt-4")
     }
 
-    @Test("TreedocsConfig fromYAML returns nil for nil input")
-    func configFromYAMLNil() throws {
+    @Test
+    func `TreedocsConfig fromYAML returns nil for nil input`() throws {
         let config = try TreedocsConfig.fromYAML(nil)
         #expect(config == nil)
     }
 
-    @Test("TreedocsConfig fromYAML throws on non-mapping input")
-    func configFromYAMLInvalid() throws {
+    @Test
+    func `TreedocsConfig fromYAML throws on non-mapping input`() throws {
         #expect(throws: TreeDocsError.self) {
             try TreedocsConfig.fromYAML("just a string")
         }
     }
 
-    @Test("TreeEntry fromYAML throws on invalid input")
-    func treeEntryFromYAMLInvalid() throws {
+    @Test
+    func `TreeEntry fromYAML throws on invalid input`() throws {
         #expect(throws: TreeDocsError.self) {
             try TreeEntry.fromYAML(123)
         }
     }
 
-    @Test("EntryDocumentation fromYAML throws on invalid input")
-    func entryDocumentationFromYAMLInvalid() throws {
+    @Test
+    func `EntryDocumentation fromYAML throws on invalid input`() throws {
         #expect(throws: TreeDocsError.self) {
             try EntryDocumentation.fromYAML(123)
         }
     }
 
-    @Test("TreedocsFile.load throws on non-mapping root")
-    func treedocsFileLoadInvalid() throws {
+    @Test
+    func `TreedocsFile.load throws on non-mapping root`() throws {
         #expect(throws: TreeDocsError.self) {
             try TreedocsFile.load(from: "just a string\n")
         }
     }
 
-    @Test("ConfigLoader with non-existent global config path returns defaults")
-    func configLoaderMissingGlobalConfig() throws {
+    @Test
+    func `ConfigLoader with non-existent global config path returns defaults`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("README.md", contents: "test")
         let loader = ConfigLoader(globalConfigPath: workspace.root + Path("does-not-exist.yaml"))
@@ -460,8 +460,8 @@ struct SchemaAndConfigTests {
         #expect(loaded.config.resolvedUseGitignore == true)
     }
 
-    @Test("ConfigLoader merges empty project config with defaults")
-    func configLoaderEmptyProjectConfig() throws {
+    @Test
+    func `ConfigLoader merges empty project config with defaults`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("README.md", contents: "test")
         try workspace.createDirectory(".treedocs")

@@ -3,8 +3,8 @@ import Testing
 
 @Suite("Workflow")
 struct WorkflowTests {
-    @Test("Init creates treedocs.yaml and sync preserves existing descriptions while adding and removing paths")
-    func initAndSync() throws {
+    @Test
+    func `Init creates treedocs.yaml and sync preserves existing descriptions while adding and removing paths`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
@@ -35,8 +35,8 @@ struct WorkflowTests {
         #expect(TreeOperations.entry(at: "Sources/App.swift", in: synced.tree) == nil)
     }
 
-    @Test("Check reports clean and stale trees with severity-aware failure behavior")
-    func checkBehavior() throws {
+    @Test
+    func `Check reports clean and stale trees with severity-aware failure behavior`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
@@ -70,8 +70,8 @@ struct WorkflowTests {
         #expect(!cleanReport.shouldFail)
     }
 
-    @Test("Inspect resolves direct links, chained links, and cycle errors")
-    func inspectLinks() throws {
+    @Test
+    func `Inspect resolves direct links, chained links, and cycle errors`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("README.md", contents: "demo")
         try workspace.saveState(
@@ -111,8 +111,8 @@ struct WorkflowTests {
         }
     }
 
-    @Test("Update mutates descriptions and references and refreshes the signature")
-    func updateMutatesEntry() throws {
+    @Test
+    func `Update mutates descriptions and references and refreshes the signature`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
@@ -136,8 +136,8 @@ struct WorkflowTests {
         #expect(TreeOperations.entry(at: "README.md", in: updated.tree)?.references == ["DOCS/README.md"])
     }
 
-    @Test("ls renders refs and links and path returns a raw matching path")
-    func lsAndPath() throws {
+    @Test
+    func `ls renders refs and links and path returns a raw matching path`() throws {
         let workspace = try TestWorkspace()
         try workspace.saveState(
             TreedocsFile(
