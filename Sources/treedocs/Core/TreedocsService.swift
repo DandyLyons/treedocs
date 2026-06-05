@@ -166,10 +166,91 @@ struct TreedocsService {
         return try renderer.render(tree: file.tree, subtreePath: subtreePath?.trimmedNilIfEmpty, config: loaded.config)
     }
 
+    func show(at rootPath: String, path: String, checkFirst: Bool) throws -> String {
+        var lines: [String] = []
+        if checkFirst {
+            let report = try check(at: rootPath)
+            if report.hasIssues {
+                lines.append("Warning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report.")
+            }
+        }
+
+        lines.append(try renderTree(at: rootPath, subtreePath: path))
+        return lines.joined(separator: "\n")
+    }
+
+    func configFiles(at rootPath: String, under targetPath: String) throws -> [String] {
+        let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
+        let normalizedTarget = RelativePath.normalize(targetPath)
+        let searchRoot = normalizedTarget.isEmpty ? repositoryPaths.root : repositoryPaths.root + Path(normalizedTarget)
+        guard searchRoot.exists else {
+            throw TreeDocsError.message("Path does not exist: \(searchRoot.string)")
+        }
+
+        let fileManager = FileManager.default
+        let rootString = repositoryPaths.root.string
+        let searchRootString = searchRoot.string
+        var results: [String] = []
+
+        if !searchRoot.isDirectory {
+            if isTreedocsConfigFile(searchRootString) {
+                results.append(relativePath(for: searchRootString, root: rootString))
+            }
+            return results.sorted()
+        }
+
+        guard let enumerator = fileManager.enumerator(atPath: searchRootString) else {
+            return []
+        }
+
+        for case let path as String in enumerator {
+            let fullPath = searchRoot + Path(path)
+            guard fullPath.isFile, isTreedocsConfigFile(fullPath.string) else {
+                continue
+            }
+            results.append(relativePath(for: fullPath.string, root: rootString))
+        }
+
+        return results.sorted()
+    }
+
+    func fillPrompt(at rootPath: String) throws -> String {
+        let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
+        _ = try store.load(at: repositoryPaths.stateFile)
+        return """
+        Fill missing descriptions in `treedocs.yaml` for this repository.
+
+        Instructions:
+        - Read the repository structure and the existing `treedocs.yaml`.
+        - Preserve existing descriptions, references, links, project metadata, and valid schema structure unless a change is necessary to fix an inconsistency.
+        - Fill missing descriptions with concise, accurate explanations based on source files, neighboring paths, names, imports, tests, and documentation.
+        - Ask clarifying questions for unclear paths instead of inventing uncertain descriptions.
+        - Update `treedocs.yaml` only after unclear details have been resolved or explicitly marked as needing user input.
+        - Keep the result valid against `DOCS/treedocs.schema.json`.
+        """
+    }
+
     func findPath(at rootPath: String, query: String) throws -> String? {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
         let file = try store.load(at: repositoryPaths.stateFile)
         return TreeOperations.firstPath(matching: query, in: file.tree)
+    }
+
+    private func isTreedocsConfigFile(_ path: String) -> Bool {
+        path.hasSuffix("/treedocs.yaml")
+            || path.hasSuffix("/.treedocs/config.yaml")
+            || path.hasSuffix("/.treedocs/.treedocs_ignore")
+    }
+
+    private func relativePath(for path: String, root: String) -> String {
+        if path == root {
+            return "."
+        }
+        let prefix = root.hasSuffix("/") ? root : root + "/"
+        if path.hasPrefix(prefix) {
+            return String(path.dropFirst(prefix.count))
+        }
+        return path
     }
 
     private func promptForMissingDescriptions(in tree: inout [String: TreeEntry], prefix: String = "") {

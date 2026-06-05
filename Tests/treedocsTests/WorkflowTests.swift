@@ -165,4 +165,45 @@ struct WorkflowTests {
         let missing = try service.findPath(at: workspace.root.string, query: "missing")
         #expect(missing == nil)
     }
+
+    @Test
+    func `Show warns on validation issues and renders requested subtree`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        try workspace.writeFile("Sources/New.swift", contents: "print(\"new\")")
+
+        let checkedOutput = try service.show(at: workspace.root.string, path: "Sources", checkFirst: true)
+        #expect(checkedOutput.contains("Warning: treedocs discrepancies found"))
+        #expect(checkedOutput.contains("App.swift"))
+
+        let uncheckedOutput = try service.show(at: workspace.root.string, path: "Sources", checkFirst: false)
+        #expect(!uncheckedOutput.contains("Warning: treedocs discrepancies found"))
+        #expect(uncheckedOutput.contains("App.swift"))
+    }
+
+    @Test
+    func `Config file discovery and fill prompt support command scaffolding`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        try workspace.writeFile(".treedocs/config.yaml", contents: "check_severity: warn")
+        try workspace.writeFile(".treedocs/.treedocs_ignore", contents: "Generated")
+        try workspace.writeFile("Vendor/Plugin/treedocs.yaml", contents: "project:\n  name: plugin\ntree: {}")
+
+        let files = try service.configFiles(at: workspace.root.string, under: ".")
+        #expect(files == [
+            ".treedocs/.treedocs_ignore",
+            ".treedocs/config.yaml",
+            "Vendor/Plugin/treedocs.yaml",
+            "treedocs.yaml",
+        ])
+
+        let prompt = try service.fillPrompt(at: workspace.root.string)
+        #expect(prompt.contains("Fill missing descriptions"))
+        #expect(prompt.contains("DOCS/treedocs.schema.json"))
+    }
 }
