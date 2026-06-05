@@ -1,10 +1,14 @@
 {
     "$schema": "https://opencode.ai/config.json",
+    "lsp": true, // https://opencode.ai/docs/config/#lsp-servers
     "mcp": {
         "Solo": {
             "enabled": false,
             "type": "local", 
             "command": ["/Applications/Solo.app/Contents/MacOS/mcp"]
         }
-    }
+    },
+    "permission": {}, // https://opencode.ai/docs/config/#permissions
+    "shell": "zsh", 
+    "tools": {} // https://opencode.ai/docs/config/#tools 
 }
