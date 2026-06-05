@@ -1,6 +1,13 @@
 name: treedocs
 icon: null
 processes:
+  swift build:
+    command: swift build
+    working_dir: null
+    auto_start: false
+    auto_restart: false
+    restart_when_changed: []
+    env: {}
   swift run:
     command: swift run
     working_dir: null
@@ -15,8 +22,8 @@ processes:
     auto_restart: false
     restart_when_changed: []
     env: {}
-  swift build:
-    command: swift build
+  Preview DocC:
+    command: swift package --disable-sandbox preview-documentation --target treedocs --port 8733
     working_dir: null
     auto_start: false
     auto_restart: false

@@ -1,6 +1,10 @@
 import Darwin
 import Foundation
 
+/// Evaluates repository paths against standard and configured ignore patterns.
+///
+/// The matcher combines hard-coded excludes for treedocs and build artifacts with user-provided
+/// gitignore-style patterns. Later patterns can override earlier ones through `!` negation.
 struct IgnoreMatcher {
     private let patterns: [String]
     private let standardExcludedNames: Set<String> = [
@@ -14,10 +18,22 @@ struct IgnoreMatcher {
         "treedocs.yaml",
     ]
 
+    /// Creates an ignore matcher.
+    ///
+    /// - Parameter patterns: Additional gitignore-style patterns to evaluate after standard excludes.
     init(patterns: [String]) {
         self.patterns = patterns
     }
 
+    /// Determines whether a repository-relative path should be excluded.
+    ///
+    /// Standard excluded names always win. Configured patterns are then evaluated in order, with
+    /// negated patterns clearing a previous ignore decision when they match.
+    ///
+    /// - Parameters:
+    ///   - relativePath: The repository-relative path to test.
+    ///   - isDirectory: Whether the path identifies a directory.
+    /// - Returns: `true` when the scanner should skip the path.
     func shouldIgnore(relativePath: String, isDirectory: Bool) -> Bool {
         let normalized = RelativePath.normalize(relativePath)
         guard !normalized.isEmpty else {
@@ -46,6 +62,17 @@ struct IgnoreMatcher {
         return ignored
     }
 
+    /// Matches one ignore pattern against one normalized path.
+    ///
+    /// The implementation supports anchored patterns, directory-only patterns, basic `fnmatch`
+    /// globbing, basename matches, and nested path matches.
+    ///
+    /// - Parameters:
+    ///   - pattern: The raw pattern after removing any leading negation marker.
+    ///   - path: The normalized repository-relative path.
+    ///   - basename: The final component of `path`.
+    ///   - isDirectory: Whether `path` identifies a directory.
+    /// - Returns: `true` when the pattern matches the path.
     private func matches(pattern: String, path: String, basename: String, isDirectory: Bool) -> Bool {
         guard let rawPattern = pattern.trimmedNilIfEmpty else {
             return false

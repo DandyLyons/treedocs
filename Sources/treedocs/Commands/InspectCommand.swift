@@ -1,17 +1,25 @@
 import ArgumentParser
 
+/// Implements the `treedocs inspect` command.
 struct InspectCommand: ParsableCommand {
+    /// Command metadata for printing detailed documentation metadata.
     static let configuration = CommandConfiguration(
         commandName: "inspect",
         abstract: "Show documentation details for a documented path."
     )
 
+    /// Shared repository selection options.
     @OptionGroup var options: RepositoryOptions
+
+    /// Documented path whose entry details should be displayed.
     @Argument(help: "The path to inspect.")
     var targetPath: String
+
+    /// Whether directory targets should include rendered descendants.
     @Flag(help: "Render child entries recursively when the target is a directory.")
     var recursive = false
 
+    /// Prints detailed documentation, references, link resolution, and optional child tree output.
     mutating func run() throws {
         let report = try TreedocsService().inspect(at: options.path, path: targetPath, recursive: recursive)
         print("Path: \(report.path)")
