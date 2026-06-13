@@ -7,6 +7,9 @@ import PathKit
 /// filesystem signature and records entries that still need descriptions. Commands use `severity`
 /// to decide whether reported issues should fail the process.
 struct CheckReport {
+    /// JSON Schema validation errors for `treedocs.yaml`.
+    var schemaErrors: [String]
+
     /// The signature currently stored in `treedocs.yaml`, if one exists.
     var storedSignature: String?
 
@@ -26,7 +29,7 @@ struct CheckReport {
 
     /// Whether the report contains any actionable issue.
     var hasIssues: Bool {
-        hasSignatureDrift || !missingDescriptions.isEmpty
+        !schemaErrors.isEmpty || hasSignatureDrift || !missingDescriptions.isEmpty
     }
 
     /// Whether the configured severity should fail the command.
@@ -138,16 +141,27 @@ struct TreedocsService {
     /// - Throws: `TreeDocsError` for invalid paths or missing state, plus filesystem/configuration errors from loading or scanning.
     func check(at rootPath: String) throws -> CheckReport {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
-        let current = try store.load(at: repositoryPaths.stateFile)
+        let schemaErrors = schemaValidationErrors(at: repositoryPaths.stateFile)
+        let current = try store.loadWithoutSchemaValidation(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
         let missingDescriptions = TreeOperations.missingDescriptionPaths(in: current.tree)
         return CheckReport(
+            schemaErrors: schemaErrors,
             storedSignature: current.signature,
             currentSignature: scan.signature,
             missingDescriptions: missingDescriptions,
             severity: loaded.config.resolvedCheckSeverity
         )
+    }
+
+    private func schemaValidationErrors(at path: Path) -> [String] {
+        do {
+            try store.validator.validateFile(at: path)
+            return []
+        } catch {
+            return [error.localizedDescription]
+        }
     }
 
     /// Inspects a documented path.

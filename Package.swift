@@ -11,6 +11,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.7.1"),
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.4.0"),
         .package(url: "https://github.com/kylef/PathKit.git", from: "1.0.1"),
+        .package(url: "https://github.com/ajevans99/swift-json-schema", from: "0.13.1"),
     ],
     targets: [
         .executableTarget(
@@ -19,6 +20,7 @@ let package = Package(
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "PathKit", package: "PathKit"),
+                .product(name: "JSONSchema", package: "swift-json-schema"),
             ]
         ),
         .testTarget(
@@ -27,6 +29,7 @@ let package = Package(
                 "treedocs",
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "PathKit", package: "PathKit"),
+                .product(name: "JSONSchema", package: "swift-json-schema"),
             ]
         ),
     ]

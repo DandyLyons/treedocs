@@ -76,7 +76,8 @@ struct WorkflowTests {
         try workspace.writeFile("README.md", contents: "demo")
         try workspace.saveState(
             TreedocsFile(
-                signature: "sha256:test",
+                project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+                signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 tree: [
                     "src": TreeEntry(description: "Source", children: [
                         "api": TreeEntry(description: "API", isDirectory: true),
@@ -141,8 +142,9 @@ struct WorkflowTests {
         let workspace = try TestWorkspace()
         try workspace.saveState(
             TreedocsFile(
+                project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
                 overrides: TreedocsConfig(maxDescriptionLength: 18, indentSize: 4, checkSeverity: .warn),
-                signature: "sha256:test",
+                signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 tree: [
                     "src": TreeEntry(description: "Source", children: [
                         "api": TreeEntry(description: "REST endpoint definitions", references: ["DOCS/API.md"], isDirectory: true),

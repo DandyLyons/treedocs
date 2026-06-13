@@ -6,6 +6,8 @@ import PathKit
 /// The store is the filesystem boundary for serialized treedocs state. Parsing and serialization are
 /// delegated to `TreedocsFile` so callers receive typed models instead of raw YAML.
 struct TreedocsFileStore {
+    var validator = TreedocsSchemaValidator()
+
     /// Loads a treedocs state file from disk.
     ///
     /// - Parameter path: The expected `treedocs.yaml` path.
@@ -15,6 +17,14 @@ struct TreedocsFileStore {
         guard path.exists else {
             throw TreeDocsError.message("Missing treedocs state file at \(path.string). Run `treedocs init` first.")
         }
+        try validator.validateFile(at: path)
+        return try loadWithoutSchemaValidation(at: path)
+    }
+
+    /// Loads a treedocs state file without running JSON Schema validation.
+    ///
+    /// This is used by `check` after schema errors have already been captured for reporting.
+    func loadWithoutSchemaValidation(at path: Path) throws -> TreedocsFile {
         return try TreedocsFile.load(from: try path.read())
     }
 

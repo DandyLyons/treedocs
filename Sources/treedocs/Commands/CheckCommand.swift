@@ -15,6 +15,10 @@ struct CheckCommand: ParsableCommand {
     mutating func run() throws {
         let report = try TreedocsService().check(at: options.path)
 
+        for error in report.schemaErrors {
+            print(error)
+        }
+
         if report.hasSignatureDrift {
             print("Stale tree: stored signature \(report.storedSignature ?? "<missing>") does not match current signature \(report.currentSignature)")
         }

@@ -7,6 +7,97 @@ import Yams
 @Suite("Schema and Config")
 struct SchemaAndConfigTests {
     @Test
+    func `Canonical schema accepts InitialSpecs section 3_5 example`() throws {
+        let yaml = """
+        project:
+          name: "ScraperBot"
+          version: "2.1.0"
+          last_updated: "2023-10-27"
+        overrides:
+          check_severity: "error"
+          icons: true
+        signature: "sha256:7a8b9c0d1e2f34567890abcdef1234567890abcdef1234567890abcdef123456"
+        tree:
+          src:
+            _doc: "Main application source code"
+            api:
+              _doc: "REST endpoint definitions"
+              auth.py: "Handles JWT validation and user sessions"
+          Database:
+            _doc:
+              description: "Data persistence layer and migration scripts"
+              references:
+                - "DOCS/Database.md"
+                - "DOCS/Schema.md"
+                - "https://wiki.internal.com/db-standards"
+          docs/architecture:
+            _link: "src/api"
+            _doc: "Alias to API folder for architectural reference"
+          README.md: "Project entry point and installation guide"
+        """
+
+        try TreedocsSchemaValidator().validate(yaml: yaml)
+    }
+
+    @Test
+    func `Store rejects invalid schema fixture with field path`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.writeFile("treedocs.yaml", contents: """
+        project:
+          name: Example
+          version: "1.0.0"
+          last_updated: "2026-06-13"
+        signature: sha256:not-valid
+        tree: {}
+        """)
+
+        do {
+            _ = try workspace.loadState()
+            Issue.record("Expected schema validation to reject invalid signature")
+        } catch {
+            #expect(error.localizedDescription.contains("#/signature"))
+        }
+    }
+
+    @Test
+    func `Generated treedocs file validates against canonical schema`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
+    }
+
+    @Test
+    func `Round-trip through store preserves valid tree structure`() throws {
+        let workspace = try TestWorkspace()
+        let file = TreedocsFile(
+            project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+            signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            tree: [
+                "Sources": TreeEntry(description: "Source files", children: [
+                    "main.swift": TreeEntry(description: "Entrypoint", references: ["DOCS/Main.md"]),
+                    "Alias": TreeEntry(description: "Alias", link: "Sources/main.swift", isDirectory: true),
+                ], isDirectory: true),
+                "README.md": TreeEntry(description: "")
+            ]
+        )
+
+        try workspace.saveState(file)
+        var loaded = try workspace.loadState()
+        loaded.tree["Package.swift"] = TreeEntry(description: "Manifest")
+        try workspace.saveState(loaded)
+
+        let roundTrip = try workspace.loadState()
+        #expect(TreeOperations.entry(at: "Sources/main.swift", in: roundTrip.tree)?.references == ["DOCS/Main.md"])
+        #expect(TreeOperations.entry(at: "Sources/Alias", in: roundTrip.tree)?.link == "Sources/main.swift")
+        #expect(TreeOperations.entry(at: "README.md", in: roundTrip.tree)?.description == "")
+        #expect(TreeOperations.entry(at: "Package.swift", in: roundTrip.tree)?.description == "Manifest")
+    }
+
+    @Test
     func `YAML schema round-trips strings, objects, nested folders, links, and references`() throws {
         let yaml = """
         project:
