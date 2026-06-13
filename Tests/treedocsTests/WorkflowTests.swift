@@ -37,6 +37,49 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Init supports empty projects and nested documentation boundaries`() throws {
+        let emptyWorkspace = try TestWorkspace()
+        let emptyState = try emptyWorkspace.service().initialize(at: emptyWorkspace.root.string, force: false)
+        #expect(emptyState.tree.isEmpty)
+        #expect(emptyState.project.name == emptyWorkspace.root.lastComponent)
+        #expect(emptyState.signature?.hasPrefix("sha256:") == true)
+        try TreedocsSchemaValidator().validateFile(at: emptyWorkspace.root + Path("treedocs.yaml"))
+
+        let nestedWorkspace = try TestWorkspace()
+        let nestedService = try nestedWorkspace.service()
+        try nestedWorkspace.writeFile("README.md", contents: "# Demo")
+        try nestedWorkspace.writeFile("Vendor/Plugin/treedocs.yaml", contents: "project:\n  name: plugin\ntree: {}")
+        try nestedWorkspace.writeFile("Vendor/Plugin/Sources/Plugin.swift", contents: "print(\"plugin\")")
+
+        let nestedState = try nestedService.initialize(at: nestedWorkspace.root.string, force: false)
+        let delegatedEntry = try #require(TreeOperations.entry(at: "Vendor/Plugin", in: nestedState.tree))
+        #expect(delegatedEntry.isDirectory)
+        #expect(delegatedEntry.children.isEmpty)
+        #expect(TreeOperations.entry(at: "Vendor/Plugin/Sources/Plugin.swift", in: nestedState.tree) == nil)
+        try TreedocsSchemaValidator().validateFile(at: nestedWorkspace.root + Path("treedocs.yaml"))
+    }
+
+    @Test
+    func `Interactive sync preserves already documented entries`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: "Project readme",
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+
+        let synced = try service.sync(at: workspace.root.string, interactive: true)
+        #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.description == "Project readme")
+    }
+
+    @Test
     func `Check reports clean and stale trees with severity-aware failure behavior`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
@@ -327,6 +370,33 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Update reports missing paths without mutating state`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        let before = try (workspace.root + Path("treedocs.yaml")).read()
+
+        do {
+            _ = try service.update(
+                at: workspace.root.string,
+                path: "Missing.swift",
+                description: "Missing file",
+                addReferences: [],
+                removeReferences: [],
+                link: nil,
+                clearLink: false
+            )
+            Issue.record("Expected missing path update to fail")
+        } catch {
+            #expect(error.localizedDescription.contains("Path not found in treedocs tree: Missing.swift"))
+        }
+
+        let after = try (workspace.root + Path("treedocs.yaml")).read()
+        #expect(after == before)
+    }
+
+    @Test
     func `ls renders refs and links and path returns a raw matching path`() throws {
         let workspace = try TestWorkspace()
         try workspace.saveState(
@@ -476,5 +546,20 @@ struct WorkflowTests {
         let prompt = try service.fillPrompt(at: workspace.root.string)
         #expect(prompt.contains("Fill missing descriptions"))
         #expect(prompt.contains("DOCS/treedocs.schema.json"))
+    }
+
+    @Test
+    func `Fill prompt does not mutate treedocs state`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        let before = try (workspace.root + Path("treedocs.yaml")).read()
+
+        let prompt = try service.fillPrompt(at: workspace.root.string)
+
+        let after = try (workspace.root + Path("treedocs.yaml")).read()
+        #expect(prompt.contains("Ask clarifying questions for unclear paths"))
+        #expect(after == before)
     }
 }
