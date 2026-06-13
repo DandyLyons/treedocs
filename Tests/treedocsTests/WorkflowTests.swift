@@ -59,7 +59,9 @@ struct WorkflowTests {
         try workspace.writeFile("New.swift", contents: "print(\"new\")")
         let staleReport = try service.check(at: workspace.root.string)
         #expect(staleReport.hasSignatureDrift)
+        #expect(staleReport.missingPaths == ["New.swift"])
         #expect(staleReport.shouldFail)
+        #expect(CheckCommand.nextSteps(for: staleReport).contains("Run `treedocs sync` to reconcile filesystem changes, refresh the stored signature, and repair generated schema state."))
 
         var state = try workspace.loadState()
         state.overrides = TreedocsConfig(checkSeverity: .warn)
@@ -68,6 +70,58 @@ struct WorkflowTests {
         cleanReport = try service.check(at: workspace.root.string)
         #expect(cleanReport.hasIssues)
         #expect(!cleanReport.shouldFail)
+        #expect(CheckCommand.nextSteps(for: cleanReport).isEmpty)
+    }
+
+    @Test
+    func `Check reports schema failures extra paths and missing descriptions`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        try workspace.writeFile("Removed.swift", contents: "print(\"old\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        var state = try workspace.loadState()
+        state.signature = "not-a-valid-signature"
+        try workspace.saveState(state)
+        try workspace.remove("Removed.swift")
+
+        let report = try service.check(at: workspace.root.string)
+        #expect(report.schemaErrors.contains { $0.contains("signature") })
+        #expect(report.extraPaths == ["Removed.swift"])
+        #expect(report.missingDescriptions.contains("README.md"))
+        #expect(report.hasIssues)
+        #expect(report.shouldFail)
+        #expect(CheckCommand.nextSteps(for: report).contains("Run `treedocs sync` to reconcile filesystem changes, refresh the stored signature, and repair generated schema state."))
+        #expect(CheckCommand.nextSteps(for: report).contains("Add missing descriptions with `treedocs update <path> --description \"...\"`, or edit `treedocs.yaml` directly."))
+    }
+
+    @Test
+    func `Check reports nested boundaries and parent child conflicts`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("Vendor/Plugin/treedocs.yaml", contents: "project:\n  name: plugin\ntree: {}")
+        try workspace.writeFile("Vendor/Plugin/Sources/Plugin.swift", contents: "print(\"plugin\")")
+
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        var state = try workspace.loadState()
+        state.tree = [
+            "Vendor": TreeEntry(description: "Vendor code", children: [
+                "Plugin": TreeEntry(description: "Delegated plugin", children: [
+                    "Sources": TreeEntry(description: "Plugin sources", children: [
+                        "Plugin.swift": TreeEntry(description: "Plugin entry point"),
+                    ], isDirectory: true),
+                ], isDirectory: true),
+            ], isDirectory: true),
+        ]
+        try workspace.saveState(state)
+
+        let report = try service.check(at: workspace.root.string)
+        #expect(report.nestedBoundaries == ["Vendor/Plugin"])
+        #expect(report.shadowedPaths == ["Vendor/Plugin/Sources", "Vendor/Plugin/Sources/Plugin.swift"])
+        #expect(report.extraPaths == ["Vendor/Plugin/Sources", "Vendor/Plugin/Sources/Plugin.swift"])
+        #expect(report.hasIssues)
+        #expect(report.shouldFail)
     }
 
     @Test

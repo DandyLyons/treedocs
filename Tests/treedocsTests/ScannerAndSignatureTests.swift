@@ -88,6 +88,7 @@ struct ScannerAndSignatureTests {
         #expect(!paths.contains("Vendor/Plugin/Sources/"))
         #expect(!paths.contains("Vendor/Plugin/Sources/Plugin.swift"))
         #expect(!paths.contains("Vendor/Plugin/README.md"))
+        #expect(scan.nestedBoundaries == ["Vendor/Plugin"])
         #expect(delegatedEntry.isDirectory)
         #expect(delegatedEntry.children.isEmpty)
     }

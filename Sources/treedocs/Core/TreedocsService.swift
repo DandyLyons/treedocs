@@ -3,9 +3,9 @@ import PathKit
 
 /// Summarizes validation results for a repository's stored tree documentation.
 ///
-/// A check report compares the signature persisted in `treedocs.yaml` with the current scanned
-/// filesystem signature and records entries that still need descriptions. Commands use `severity`
-/// to decide whether reported issues should fail the process.
+/// A check report compares the persisted `treedocs.yaml` state with the current scanned filesystem
+/// and records schema failures, structural drift, nested boundaries, and incomplete descriptions.
+/// Commands use `severity` to decide whether reported issues should fail the process.
 struct CheckReport {
     /// JSON Schema validation errors for `treedocs.yaml`.
     var schemaErrors: [String]
@@ -19,6 +19,18 @@ struct CheckReport {
     /// Relative paths for entries that need descriptions.
     var missingDescriptions: [String]
 
+    /// Filesystem paths missing from the stored documentation tree.
+    var missingPaths: [String]
+
+    /// Stored documentation paths that no longer exist in the scanned filesystem tree.
+    var extraPaths: [String]
+
+    /// Child directories whose own `treedocs.yaml` takes precedence for descendants.
+    var nestedBoundaries: [String]
+
+    /// Stored descendant paths shadowed by a child `treedocs.yaml` boundary.
+    var shadowedPaths: [String]
+
     /// The configured failure policy for check results.
     var severity: CheckSeverity
 
@@ -29,7 +41,12 @@ struct CheckReport {
 
     /// Whether the report contains any actionable issue.
     var hasIssues: Bool {
-        !schemaErrors.isEmpty || hasSignatureDrift || !missingDescriptions.isEmpty
+        !schemaErrors.isEmpty
+            || hasSignatureDrift
+            || !missingDescriptions.isEmpty
+            || !missingPaths.isEmpty
+            || !extraPaths.isEmpty
+            || !shadowedPaths.isEmpty
     }
 
     /// Whether the configured severity should fail the command.
@@ -151,6 +168,10 @@ struct TreedocsService {
             storedSignature: current.signature,
             currentSignature: scan.signature,
             missingDescriptions: missingDescriptions,
+            missingPaths: TreeOperations.missingPaths(stored: current.tree, scanned: scan.tree),
+            extraPaths: TreeOperations.extraPaths(stored: current.tree, scanned: scan.tree),
+            nestedBoundaries: scan.nestedBoundaries,
+            shadowedPaths: TreeOperations.shadowedPaths(stored: current.tree, nestedBoundaries: scan.nestedBoundaries),
             severity: loaded.config.resolvedCheckSeverity
         )
     }

@@ -16,27 +16,52 @@ struct CheckCommand: ParsableCommand {
     mutating func run() throws {
         let report = try TreedocsService().check(at: options.path)
 
-        for error in report.schemaErrors {
-            print(error)
-        }
+        printSection("Schema validation failures", values: report.schemaErrors)
 
         if report.hasSignatureDrift {
             print("Stale tree: stored signature \(report.storedSignature ?? "<missing>") does not match current signature \(report.currentSignature)")
         }
 
-        if !report.missingDescriptions.isEmpty {
-            for path in report.missingDescriptions.sorted() {
-                print("Missing description: \(path)")
-            }
-        }
+        printSection("Missing paths", values: report.missingPaths)
+        printSection("Extra documented paths", values: report.extraPaths)
+        printSection("Nested documentation boundaries", values: report.nestedBoundaries)
+        printSection("Shadowed child-owned paths", values: report.shadowedPaths)
+        printSection("Missing descriptions", values: report.missingDescriptions)
 
         if !report.hasIssues {
             print("Tree is up to date.")
             return
         }
 
+        printSection("Next steps", values: Self.nextSteps(for: report))
+
         if report.shouldFail {
             throw ExitCode(1)
+        }
+    }
+
+    static func nextSteps(for report: CheckReport) -> [String] {
+        guard report.shouldFail else { return [] }
+
+        var steps: [String] = []
+        if !report.schemaErrors.isEmpty || report.hasSignatureDrift || !report.missingPaths.isEmpty || !report.extraPaths.isEmpty || !report.shadowedPaths.isEmpty {
+            steps.append("Run `treedocs sync` to reconcile filesystem changes, refresh the stored signature, and repair generated schema state.")
+        }
+        if !report.shadowedPaths.isEmpty {
+            steps.append("Nested `treedocs.yaml` files own their descendants; `treedocs sync` keeps only delegated boundary folders in the parent tree.")
+        }
+        if !report.missingDescriptions.isEmpty {
+            steps.append("Add missing descriptions with `treedocs update <path> --description \"...\"`, or edit `treedocs.yaml` directly.")
+        }
+
+        return steps
+    }
+
+    private func printSection(_ title: String, values: [String]) {
+        guard !values.isEmpty else { return }
+        print("\(title):")
+        for value in values.sorted() {
+            print("- \(value)")
         }
     }
 }

@@ -13,6 +13,9 @@ struct TreeScanResult {
     /// The normalized file and directory paths included in the signature payload.
     var normalizedPaths: [String]
 
+    /// Child directories that contain their own `treedocs.yaml` state file.
+    var nestedBoundaries: [String]
+
     /// The stable signature for `normalizedPaths`.
     var signature: String {
         TreeSignature.make(from: normalizedPaths)
@@ -53,10 +56,11 @@ struct TreeScanner {
     /// - Returns: The scanned tree and normalized paths used for its signature.
     /// - Throws: Filesystem errors from enumerating directories.
     func scan(root: Path, ignoreMatcher: IgnoreMatcher) throws -> TreeScanResult {
-        let tree = try buildTree(root: root, relativePath: "", ignoreMatcher: ignoreMatcher)
+        var nestedBoundaries: [String] = []
+        let tree = try buildTree(root: root, relativePath: "", ignoreMatcher: ignoreMatcher, nestedBoundaries: &nestedBoundaries)
         var normalizedPaths: [String] = []
         TreeOperations.collectNormalizedPaths(in: tree, into: &normalizedPaths)
-        return TreeScanResult(tree: tree, normalizedPaths: normalizedPaths)
+        return TreeScanResult(tree: tree, normalizedPaths: normalizedPaths, nestedBoundaries: nestedBoundaries.sorted())
     }
 
     /// Recursively scans children beneath a relative path.
@@ -70,7 +74,12 @@ struct TreeScanner {
     ///   - ignoreMatcher: The matcher used to skip ignored paths.
     /// - Returns: Tree entries for the visible children under `relativePath`.
     /// - Throws: Filesystem errors from enumerating directories.
-    private func buildTree(root: Path, relativePath: String, ignoreMatcher: IgnoreMatcher) throws -> [String: TreeEntry] {
+    private func buildTree(
+        root: Path,
+        relativePath: String,
+        ignoreMatcher: IgnoreMatcher,
+        nestedBoundaries: inout [String]
+    ) throws -> [String: TreeEntry] {
         let absolutePath = relativePath.isEmpty ? root : root + Path(relativePath)
         let childNames = try fileManager.contentsOfDirectory(atPath: absolutePath.string).sorted()
         var result: [String: TreeEntry] = [:]
@@ -86,11 +95,12 @@ struct TreeScanner {
 
             if isDirectory {
                 if containsNestedStateFile(at: childAbsolutePath) {
+                    nestedBoundaries.append(childRelativePath)
                     result[childName] = TreeEntry(description: "", children: [:], isDirectory: true)
                     continue
                 }
 
-                let children = try buildTree(root: root, relativePath: childRelativePath, ignoreMatcher: ignoreMatcher)
+                let children = try buildTree(root: root, relativePath: childRelativePath, ignoreMatcher: ignoreMatcher, nestedBoundaries: &nestedBoundaries)
                 result[childName] = TreeEntry(description: "", children: children, isDirectory: true)
             } else {
                 result[childName] = TreeEntry(description: "")

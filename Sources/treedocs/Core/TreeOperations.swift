@@ -158,6 +158,26 @@ enum TreeOperations {
             .map(\.0)
     }
 
+    /// Finds paths present in the scanned filesystem but absent from stored documentation.
+    static func missingPaths(stored: [String: TreeEntry], scanned: [String: TreeEntry]) -> [String] {
+        sortedDifference(lhs: pathSet(scanned), rhs: pathSet(stored))
+    }
+
+    /// Finds paths present in stored documentation but absent from the scanned filesystem.
+    static func extraPaths(stored: [String: TreeEntry], scanned: [String: TreeEntry]) -> [String] {
+        sortedDifference(lhs: pathSet(stored), rhs: pathSet(scanned))
+    }
+
+    /// Finds stored descendant paths that are owned by nested `treedocs.yaml` boundaries.
+    static func shadowedPaths(stored: [String: TreeEntry], nestedBoundaries: [String]) -> [String] {
+        let storedPaths = pathSet(stored)
+        return storedPaths.filter { path in
+            nestedBoundaries.contains { boundary in
+                path.hasPrefix(boundary + "/")
+            }
+        }.sorted()
+    }
+
     /// Merges scanned structure with existing metadata.
     ///
     /// The scanned tree is authoritative for filesystem structure. Existing descriptions,
@@ -226,5 +246,13 @@ enum TreeOperations {
             }
         }
         return merged
+    }
+
+    private static func pathSet(_ tree: [String: TreeEntry]) -> Set<String> {
+        Set(flatten(tree).map(\.0))
+    }
+
+    private static func sortedDifference(lhs: Set<String>, rhs: Set<String>) -> [String] {
+        lhs.subtracting(rhs).sorted()
     }
 }

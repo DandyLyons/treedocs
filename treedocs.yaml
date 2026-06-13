@@ -58,7 +58,8 @@ tree:
           tree.
         TreedocsFileStore.swift: Reads and writes typed treedocs.yaml state files
           at the filesystem boundary.
-        TreedocsSchemaValidator.swift: Validates treedocs.yaml documents against the canonical JSON Schema.
+        TreedocsSchemaValidator.swift: Validates treedocs.yaml documents against the
+          canonical JSON Schema.
         TreedocsService.swift: High-level orchestration layer for CLI workflows.
         _doc: Core services for loading, scanning, rendering, and updating treedocs
           data.
