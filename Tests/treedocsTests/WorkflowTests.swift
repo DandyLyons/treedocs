@@ -141,7 +141,7 @@ struct WorkflowTests {
         let workspace = try TestWorkspace()
         try workspace.saveState(
             TreedocsFile(
-                overrides: TreedocsConfig(maxDescriptionLength: 18, indentSize: 4),
+                overrides: TreedocsConfig(maxDescriptionLength: 18, indentSize: 4, checkSeverity: .warn),
                 signature: "sha256:test",
                 tree: [
                     "src": TreeEntry(description: "Source", children: [
@@ -156,14 +156,78 @@ struct WorkflowTests {
 
         let service = try workspace.service()
         let rendered = try service.renderTree(at: workspace.root.string, subtreePath: nil)
-        #expect(rendered.contains("    api/ [ref]"))
-        #expect(rendered.contains("architecture/ [link->src/api]"))
+        #expect(rendered.contains("\u{001B}[1;32m.\u{001B}[0m"))
+        #expect(rendered.contains("├── \u{001B}[1;33mdocs/\u{001B}[0m"))
+        #expect(rendered.contains("│   └── \u{001B}[1;32marchitecture/\u{001B}[0m [link->src/api]"))
+        #expect(rendered.contains("    └── \u{001B}[1;32mapi/\u{001B}[0m [ref]"))
         #expect(rendered.contains("REST endpoint d..."))
+
+        let errorRendered = try TreeRenderer().render(
+            tree: ["Missing.md": TreeEntry(description: nil)],
+            subtreePath: nil,
+            config: .defaults
+        )
+        #expect(errorRendered.contains("└── \u{001B}[1;31mMissing.md\u{001B}[0m"))
 
         let path = try service.findPath(at: workspace.root.string, query: "endpoint")
         #expect(path == "src/api")
         let missing = try service.findPath(at: workspace.root.string, query: "missing")
         #expect(missing == nil)
+    }
+
+    @Test
+    func `Tree renderer formats root connectors colors metadata and descriptions exactly`() throws {
+        let tree = [
+            "docs": TreeEntry(description: "Documentation", children: [
+                "guide.md": TreeEntry(description: "User guide", references: ["DOCS/GUIDE.md"]),
+                "missing.md": TreeEntry(description: nil),
+            ], isDirectory: true),
+            "src": TreeEntry(description: "Source", children: [
+                "api": TreeEntry(description: "API", link: "docs/guide.md", isDirectory: true),
+                "main.swift": TreeEntry(description: "Application entry point"),
+            ], isDirectory: true),
+        ]
+
+        let rendered = try TreeRenderer().render(
+            tree: tree,
+            subtreePath: nil,
+            config: TreedocsConfig(maxDescriptionLength: 120, checkSeverity: .error)
+        )
+
+        #expect(rendered == """
+        \u{001B}[1;32m.\u{001B}[0m
+        ├── \u{001B}[1;32mdocs/\u{001B}[0m  Documentation
+        │   ├── \u{001B}[1;32mguide.md\u{001B}[0m [ref]  User guide
+        │   └── \u{001B}[1;31mmissing.md\u{001B}[0m
+        └── \u{001B}[1;32msrc/\u{001B}[0m  Source
+            ├── \u{001B}[1;32mapi/\u{001B}[0m [link->docs/guide.md]  API
+            └── \u{001B}[1;32mmain.swift\u{001B}[0m  Application entry point
+        """)
+    }
+
+    @Test
+    func `Tree renderer formats requested directory subtree exactly`() throws {
+        let tree = [
+            "src": TreeEntry(description: "Source", children: [
+                "Components": TreeEntry(description: "UI components", children: [
+                    "Button.swift": TreeEntry(description: "Reusable button"),
+                ], isDirectory: true),
+                "main.swift": TreeEntry(description: "Application entry point"),
+            ], isDirectory: true),
+        ]
+
+        let rendered = try TreeRenderer().render(
+            tree: tree,
+            subtreePath: "src",
+            config: TreedocsConfig(maxDescriptionLength: 120, checkSeverity: .error)
+        )
+
+        #expect(rendered == """
+        \u{001B}[1;32msrc/\u{001B}[0m  Source
+        ├── \u{001B}[1;32mComponents/\u{001B}[0m  UI components
+        │   └── \u{001B}[1;32mButton.swift\u{001B}[0m  Reusable button
+        └── \u{001B}[1;32mmain.swift\u{001B}[0m  Application entry point
+        """)
     }
 
     @Test

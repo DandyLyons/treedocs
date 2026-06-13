@@ -3,13 +3,35 @@ import Foundation
 /// Renders documented tree entries as human-readable text.
 ///
 /// The renderer is responsible only for presentation. It does not resolve links or mutate entries;
-/// it formats labels, optional reference/link markers, indentation, alignment, and truncated
-/// descriptions according to `TreedocsConfig`.
+/// it formats tree connectors, labels, optional reference/link markers, alignment, colors, and
+/// truncated descriptions according to `TreedocsConfig`.
 struct TreeRenderer {
+    private struct RenderRow {
+        var label: String
+        var visibleLabelLength: Int
+        var description: String?
+    }
+
+    private enum EntryStatus {
+        case clean
+        case warning
+        case error
+
+        var ansiCode: String {
+            switch self {
+            case .clean: return "\u{001B}[1;32m"
+            case .warning: return "\u{001B}[1;33m"
+            case .error: return "\u{001B}[1;31m"
+            }
+        }
+    }
+
+    private let ansiReset = "\u{001B}[0m"
+
     /// Renders a tree or subtree.
     ///
-    /// When `subtreePath` names a directory, only that directory's children are rendered with the
-    /// requested path as their prefix. When it names a file, a single-file tree is rendered.
+    /// When `subtreePath` names a directory, that directory is rendered as the root of the tree. When
+    /// it names a file, a single-file tree is rendered.
     ///
     /// - Parameters:
     ///   - tree: The full documentation tree to render from.
@@ -18,30 +40,31 @@ struct TreeRenderer {
     /// - Returns: A newline-separated textual representation of the requested tree.
     /// - Throws: `TreeDocsError` when `subtreePath` does not exist in `tree`.
     func render(tree: [String: TreeEntry], subtreePath: String?, config: TreedocsConfig) throws -> String {
+        let rootLabel: String
+        let rootEntry: TreeEntry?
         let renderedTree: [String: TreeEntry]
-        let pathPrefix: String
 
         if let subtreePath, let normalized = RelativePath.normalize(subtreePath).trimmedNilIfEmpty {
             guard let entry = TreeOperations.entry(at: normalized, in: tree) else {
                 throw TreeDocsError.message("Path not found in treedocs tree: \(normalized)")
             }
 
-            if entry.isDirectory {
-                renderedTree = entry.children
-                pathPrefix = normalized
-            } else {
-                renderedTree = [RelativePath.components(for: normalized).last ?? normalized: entry]
-                pathPrefix = RelativePath.components(for: normalized).dropLast().joined(separator: "/")
-            }
+            rootLabel = entry.isDirectory ? normalized + "/" : normalized
+            rootEntry = entry
+            renderedTree = entry.isDirectory ? entry.children : [:]
         } else {
+            rootLabel = "."
+            rootEntry = nil
             renderedTree = tree
-            pathPrefix = ""
         }
 
-        let flattened = flattenForRender(tree: renderedTree, prefix: pathPrefix, depth: 0, config: config)
-        let labelWidth = config.resolvedAlignColumns ? flattened.map { $0.label.count }.max() ?? 0 : 0
+        var flattened = [rootRow(label: rootLabel, entry: rootEntry, config: config)]
+        flattened.append(contentsOf: flattenForRender(tree: renderedTree, prefix: "", config: config))
+
+        let labelWidth = config.resolvedAlignColumns ? flattened.map(\.visibleLabelLength).max() ?? 0 : 0
         let rendered = flattened.map { item in
-            let label = config.resolvedAlignColumns ? item.label.padding(toLength: labelWidth, withPad: " ", startingAt: 0) : item.label
+            let padding = config.resolvedAlignColumns ? String(repeating: " ", count: max(labelWidth - item.visibleLabelLength, 0)) : ""
+            let label = item.label + padding
             if let description = item.description {
                 return "\(label)  \(description)"
             }
@@ -50,29 +73,47 @@ struct TreeRenderer {
         return rendered.joined(separator: "\n")
     }
 
-    /// Flattens a nested tree into indented render rows.
+    /// Builds the root row for a rendered tree.
+    ///
+    /// The synthetic `.` root is always shown as clean because repository-wide drift is reported
+    /// separately by `show` and is not represented by a real tree entry.
+    private func rootRow(label: String, entry: TreeEntry?, config: TreedocsConfig) -> RenderRow {
+        let status = entry.map { entryStatus(for: $0, config: config) } ?? EntryStatus.clean
+        let decorated = decorate(label: styled(label: label, status: status), entry: entry)
+        let plain = decorate(label: label, entry: entry)
+        return RenderRow(label: decorated, visibleLabelLength: plain.count, description: entry.map { descriptionText(for: $0, config: config) } ?? nil)
+    }
+
+    /// Flattens a nested tree into connector-based render rows.
     ///
     /// Each returned row contains a fully decorated label and the already-truncated description text,
     /// leaving column alignment to the top-level render method.
     ///
     /// - Parameters:
     ///   - tree: The tree or subtree to flatten.
-    ///   - prefix: The logical path prefix for entries in `tree`.
-    ///   - depth: The current nesting depth used for indentation.
+    ///   - prefix: The visible tree prefix made from ancestor connectors.
     ///   - config: Display configuration for indentation and description length.
     /// - Returns: Ordered render rows containing labels and optional descriptions.
-    private func flattenForRender(tree: [String: TreeEntry], prefix: String, depth: Int, config: TreedocsConfig) -> [(label: String, description: String?)] {
-        var lines: [(String, String?)] = []
+    private func flattenForRender(tree: [String: TreeEntry], prefix: String, config: TreedocsConfig) -> [RenderRow] {
+        var lines: [RenderRow] = []
+        let keys = tree.keys.sorted()
 
-        for key in tree.keys.sorted() {
+        for (index, key) in keys.enumerated() {
             guard let entry = tree[key] else { continue }
-            let path = prefix.isEmpty ? key : prefix + "/" + key
-            let indent = String(repeating: " ", count: depth * config.resolvedIndentSize)
+            let isLast = index == keys.count - 1
+            let connector = isLast ? "└── " : "├── "
+            let childPrefix = prefix + (isLast ? "    " : "│   ")
             let marker = entry.isDirectory ? "\(key)/" : key
-            let label = indent + decorate(label: marker, entry: entry)
-            lines.append((label, descriptionText(for: entry, config: config)))
+            let status = entryStatus(for: entry, config: config)
+            let decorated = decorate(label: styled(label: marker, status: status), entry: entry)
+            let plain = decorate(label: marker, entry: entry)
+            lines.append(RenderRow(
+                label: prefix + connector + decorated,
+                visibleLabelLength: (prefix + connector + plain).count,
+                description: descriptionText(for: entry, config: config)
+            ))
             if entry.isDirectory {
-                lines.append(contentsOf: flattenForRender(tree: entry.children, prefix: path, depth: depth + 1, config: config))
+                lines.append(contentsOf: flattenForRender(tree: entry.children, prefix: childPrefix, config: config))
             }
         }
 
@@ -88,18 +129,32 @@ struct TreeRenderer {
     ///   - label: The base path label, including any indentation or directory suffix.
     ///   - entry: The entry whose metadata should be reflected in the label.
     /// - Returns: The decorated label.
-    private func decorate(label: String, entry: TreeEntry) -> String {
+    private func decorate(label: String, entry: TreeEntry?) -> String {
         var suffixes: [String] = []
-        if entry.hasReferences {
+        if entry?.hasReferences == true {
             suffixes.append("[ref]")
         }
-        if let link = entry.link {
+        if let link = entry?.link {
             suffixes.append("[link->\(link)]")
         }
         if suffixes.isEmpty {
             return label
         }
         return label + " " + suffixes.joined(separator: " ")
+    }
+
+    /// Determines the display status color for one entry.
+    private func entryStatus(for entry: TreeEntry, config: TreedocsConfig) -> EntryStatus {
+        guard entry.needsDescription else {
+            return .clean
+        }
+
+        return config.resolvedCheckSeverity == .warn ? .warning : .error
+    }
+
+    /// Applies ANSI bold color styling to a path label.
+    private func styled(label: String, status: EntryStatus) -> String {
+        status.ansiCode + label + ansiReset
     }
 
     /// Formats description text for display.

@@ -4,66 +4,66 @@ project:
   version: 0.0.0
 signature: sha256:f9ed91d6881c3bed58a07498be09e182c0e2db3738fb072eaf80207432b351ac
 tree:
-  .gitignore: ''
-  .spi.yml: ''
+  .gitignore: Files and build artifacts ignored by Git.
+  .spi.yml: Swift Package Index configuration for package documentation and compatibility metadata.
   .vscode:
-    _doc: ''
-    launch.json: ''
-  AGENTS.md: ''
+    _doc: VS Code workspace settings for local development and debugging.
+    launch.json: Debug launch configurations for running treedocs from VS Code.
+  AGENTS.md: Project instructions and operating notes for AI coding agents.
   DOCS:
-    InitialSpecs.md: ''
-    _doc: ''
-    treedocs.schema.json: ''
+    InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
+    _doc: Supplemental project documentation and schema assets.
+    treedocs.schema.json: JSON Schema describing the expected treedocs.yaml structure.
   LICENSE: ''
   Package.resolved: ''
-  Package.swift: ''
-  README.md: ''
+  Package.swift: Swift Package Manager manifest defining products, targets, and dependencies.
+  README.md: User-facing overview, installation, and command usage documentation.
   Sources:
-    _doc: ''
+    _doc: Swift package source code for the treedocs executable.
     treedocs:
       Commands:
-        CheckCommand.swift: ''
-        Common.swift: ''
+        CheckCommand.swift: Implements validation for signature drift and missing descriptions.
+        Common.swift: Shared CLI options and helpers used by multiple commands.
         ConfigCommand.swift: ''
-        InitCommand.swift: ''
-        InspectCommand.swift: ''
+        InitCommand.swift: Creates an initial treedocs.yaml file for a repository.
+        InspectCommand.swift: Displays documentation for a path, including resolved links and recursive views.
         LsCommand.swift: ''
         PathCommand.swift: ''
         PromptsCommand.swift: ''
         ShowCommand.swift: ''
-        SyncCommand.swift: ''
-        UpdateCommand.swift: ''
-        _doc: ''
+        SyncCommand.swift: Reconciles treedocs.yaml with the current filesystem while preserving descriptions.
+        UpdateCommand.swift: Updates descriptions, references, and links for documented paths.
+        _doc: ArgumentParser command implementations for treedocs subcommands.
       Core:
-        ConfigLoader.swift: ''
-        IgnoreMatcher.swift: ''
+        ConfigLoader.swift: Loads and validates treedocs configuration from YAML.
+        IgnoreMatcher.swift: Applies standard excludes, gitignore rules, and treedocs ignore patterns.
         LinkResolver.swift: ''
         PathUtilities.swift: ''
-        TreeOperations.swift: ''
-        TreeRenderer.swift: ''
-        TreeScanner.swift: ''
+        TreeOperations.swift: Mutates and queries documentation tree entries.
+        TreeRenderer.swift: Formats documentation trees for CLI output.
+        TreeScanner.swift: Scans repository files into the canonical documentation tree.
         TreedocsFileStore.swift: ''
-        TreedocsService.swift: ''
-        _doc: ''
+        TreedocsService.swift: High-level orchestration layer for CLI workflows.
+        _doc: Core services for loading, scanning, rendering, and updating treedocs data.
       Models:
-        TreedocsConfig.swift: ''
-        TreedocsFile.swift: ''
-        _doc: ''
-      TreeDocs.swift: ''
-      _doc: ''
+        TreedocsConfig.swift: Codable model for treedocs configuration and ignore settings.
+        TreedocsFile.swift: Codable model for project metadata, signature, and documentation tree contents.
+        _doc: Data models representing treedocs.yaml and related configuration.
+      TreeDocs.swift: Executable entry point that wires the root CLI and subcommands together.
+      _doc: Main treedocs executable target.
       treedocs.docc:
-        GettingStarted.md: ''
-        _doc: ''
+        GettingStarted.md: DocC tutorial or guide for getting started with treedocs.
+        _doc: DocC documentation catalog for generated package documentation.
         treedocs.md: ''
   Tests:
-    _doc: ''
+    _doc: Swift Testing test suite for treedocs behavior.
     treedocsTests:
-      IgnoreMatcherTests.swift: ''
-      ScannerAndSignatureTests.swift: ''
+      IgnoreMatcherTests.swift: Tests ignore pattern loading, matching, and negation behavior.
+      ScannerAndSignatureTests.swift: Tests filesystem scanning and signature generation.
       SchemaAndConfigTests.swift: ''
       TestSupport.swift: ''
-      WorkflowTests.swift: ''
-      _doc: ''
+      WorkflowTests.swift: End-to-end command workflow tests covering common CLI usage.
+      _doc: Unit and workflow tests for the treedocs package.
   solo.yml: ''
   tmp:
     _doc: ''
