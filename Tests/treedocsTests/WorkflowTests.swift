@@ -1,4 +1,5 @@
 import Testing
+import PathKit
 @testable import treedocs
 
 @Suite("Workflow")
@@ -187,6 +188,87 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Show resolves internal links and link chains to rendered targets`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.saveState(
+            TreedocsFile(
+                project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+                signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                tree: [
+                    "src": TreeEntry(description: "Source", children: [
+                        "api": TreeEntry(description: "API surface", children: [
+                            "Routes.swift": TreeEntry(description: "Route declarations"),
+                        ], isDirectory: true),
+                    ], isDirectory: true),
+                    "docs": TreeEntry(children: [
+                        "architecture": TreeEntry(description: "Architecture alias", link: "../src/api", isDirectory: true),
+                    ], isDirectory: true),
+                    "api-alias": TreeEntry(link: "docs/architecture", isDirectory: true),
+                ]
+            )
+        )
+
+        let service = try workspace.service()
+        let direct = try service.show(at: workspace.root.string, path: "docs/architecture", checkFirst: false)
+        #expect(direct.contains("src/api/"))
+        #expect(direct.contains("Routes.swift"))
+        #expect(!direct.contains("Architecture alias"))
+
+        let chained = try service.show(at: workspace.root.string, path: "api-alias", checkFirst: false)
+        #expect(chained.contains("src/api/"))
+        #expect(chained.contains("Route declarations"))
+    }
+
+    @Test
+    func `Show displays external aliases`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.saveState(
+            TreedocsFile(
+                project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+                signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                tree: [
+                    "api-docs": TreeEntry(link: "https://example.com/api"),
+                ]
+            )
+        )
+
+        let output = try workspace.service().show(at: workspace.root.string, path: "api-docs", checkFirst: false)
+        #expect(output == "External alias: api-docs -> https://example.com/api")
+    }
+
+    @Test
+    func `Show reports broken links and link cycles`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.saveState(
+            TreedocsFile(
+                project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+                signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                tree: [
+                    "broken": TreeEntry(link: "missing/target"),
+                    "cycle-a": TreeEntry(link: "cycle-b"),
+                    "cycle-b": TreeEntry(link: "cycle-a"),
+                ]
+            )
+        )
+
+        let service = try workspace.service()
+        do {
+            _ = try service.show(at: workspace.root.string, path: "broken", checkFirst: false)
+            Issue.record("Expected broken link error")
+        } catch {
+            #expect(error.localizedDescription.contains("Broken link: broken -> missing/target"))
+            #expect(error.localizedDescription.contains("missing target: missing/target"))
+        }
+
+        do {
+            _ = try service.show(at: workspace.root.string, path: "cycle-a", checkFirst: false)
+            Issue.record("Expected link cycle error")
+        } catch {
+            #expect(error.localizedDescription.contains("Link cycle detected: cycle-a -> cycle-b -> cycle-a"))
+        }
+    }
+
+    @Test
     func `Update mutates descriptions and references and refreshes the signature`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
@@ -209,6 +291,39 @@ struct WorkflowTests {
         #expect(updated.signature != initialSignature)
         #expect(TreeOperations.entry(at: "README.md", in: updated.tree)?.description == "Project readme")
         #expect(TreeOperations.entry(at: "README.md", in: updated.tree)?.references == ["DOCS/README.md"])
+    }
+
+    @Test
+    func `Update link and clear link preserve schema-valid entries`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        let linked = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: nil,
+            addReferences: [],
+            removeReferences: [],
+            link: "Sources/App.swift",
+            clearLink: false
+        )
+        #expect(TreeOperations.entry(at: "README.md", in: linked.tree)?.link == "Sources/App.swift")
+        try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
+
+        let cleared = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: nil,
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: true
+        )
+        #expect(TreeOperations.entry(at: "README.md", in: cleared.tree)?.link == nil)
+        try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
     }
 
     @Test

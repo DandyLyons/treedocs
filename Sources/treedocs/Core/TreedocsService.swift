@@ -324,8 +324,28 @@ struct TreedocsService {
             }
         }
 
-        lines.append(try renderTree(at: rootPath, subtreePath: path))
+        let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
+        let file = try store.load(at: repositoryPaths.stateFile)
+        let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: file.overrides)
+        let normalizedPath = RelativePath.normalize(path)
+
+        switch linkResolver.resolve(path: normalizedPath, in: file.tree) {
+        case .none:
+            lines.append(try renderer.render(tree: file.tree, subtreePath: path, config: loaded.config))
+        case let .external(url):
+            lines.append("External alias: \(displayPath(normalizedPath)) -> \(url)")
+        case let .resolved(resolvedPath, _, _):
+            lines.append(try renderer.render(tree: file.tree, subtreePath: resolvedPath, config: loaded.config))
+        case let .broken(target, chain):
+            throw TreeDocsError.message("Broken link: \(chain.joined(separator: " -> ")) (missing target: \(target))")
+        case let .cycle(chain):
+            throw TreeDocsError.message("Link cycle detected: \(chain.joined(separator: " -> "))")
+        }
         return lines.joined(separator: "\n")
+    }
+
+    private func displayPath(_ path: String) -> String {
+        path.isEmpty ? "." : path
     }
 
     /// Finds treedocs configuration and state files beneath a repository path.
