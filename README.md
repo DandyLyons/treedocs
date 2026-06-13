@@ -4,6 +4,7 @@
 
 ## What It Does
 - Scans a repository into a nested YAML tree
+- Treats nested `treedocs.yaml` files as documentation boundaries for delegated subtrees
 - Stores project metadata, documentation, references, and internal links
 - Defines the `treedocs.yaml` contract with JSON Schema for reusable validation
 - Reconciles disk changes back into the YAML state
@@ -71,6 +72,11 @@ Ignore sources are combined from:
 - Standard excludes such as `.git`, `.build`, `.swiftpm`, `.treedocs`, `.agents`, `.opencode`, and `node_modules`
 - `.gitignore`
 - `.treedocs/.treedocs_ignore`
+
+## Nested Documentation Boundaries
+When a child folder contains its own `treedocs.yaml`, that file owns documentation for the child folder's descendants. The parent scan still records the child folder as a directory, but it does not recursively include the child's files or subdirectories.
+
+For example, if `Vendor/Plugin/treedocs.yaml` exists, the parent `treedocs.yaml` owns `Vendor/Plugin/` as a delegated directory entry while `Vendor/Plugin/treedocs.yaml` owns `Vendor/Plugin/Sources/` and other descendants.
 
 ## Development
 ```bash

@@ -49,6 +49,50 @@ struct ScannerAndSignatureTests {
     }
 
     @Test
+    func `Scanner includes empty directories and deep nested files`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.createDirectory("Sources/Empty")
+        try workspace.writeFile("Sources/Feature/Subfeature/File.swift", contents: "")
+
+        let scan = try TreeScanner().scan(root: workspace.root, ignoreMatcher: IgnoreMatcher(patterns: []))
+        let paths = Set(scan.normalizedPaths)
+
+        #expect(paths.contains("Sources/"))
+        #expect(paths.contains("Sources/Empty/"))
+        #expect(paths.contains("Sources/Feature/"))
+        #expect(paths.contains("Sources/Feature/Subfeature/"))
+        #expect(paths.contains("Sources/Feature/Subfeature/File.swift"))
+        #expect(TreeOperations.entry(at: "Sources/Empty", in: scan.tree)?.isDirectory == true)
+        #expect(TreeOperations.entry(at: "Sources/Feature/Subfeature/File.swift", in: scan.tree)?.isDirectory == false)
+    }
+
+    @Test
+    func `Scanner stops at nested treedocs boundaries`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.writeFile("README.md", contents: "")
+        try workspace.writeFile("Vendor/Plugin/treedocs.yaml", contents: "project:\n  name: plugin\ntree: {}")
+        try workspace.writeFile("Vendor/Plugin/Sources/Plugin.swift", contents: "")
+        try workspace.writeFile("Vendor/Plugin/README.md", contents: "")
+        try workspace.writeFile("Vendor/Other/Package.swift", contents: "")
+
+        let scan = try TreeScanner().scan(root: workspace.root, ignoreMatcher: IgnoreMatcher(patterns: []))
+        let paths = Set(scan.normalizedPaths)
+        let delegatedEntry = try #require(TreeOperations.entry(at: "Vendor/Plugin", in: scan.tree))
+
+        #expect(paths.contains("README.md"))
+        #expect(paths.contains("Vendor/"))
+        #expect(paths.contains("Vendor/Plugin/"))
+        #expect(paths.contains("Vendor/Other/"))
+        #expect(paths.contains("Vendor/Other/Package.swift"))
+        #expect(!paths.contains("Vendor/Plugin/treedocs.yaml"))
+        #expect(!paths.contains("Vendor/Plugin/Sources/"))
+        #expect(!paths.contains("Vendor/Plugin/Sources/Plugin.swift"))
+        #expect(!paths.contains("Vendor/Plugin/README.md"))
+        #expect(delegatedEntry.isDirectory)
+        #expect(delegatedEntry.children.isEmpty)
+    }
+
+    @Test
     func `Signature is deterministic and changes on structural updates`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("README.md", contents: "Hello")

@@ -5,7 +5,8 @@ struct SyncCommand: ParsableCommand {
     /// Command metadata for reconciling state with the filesystem.
     static let configuration = CommandConfiguration(
         commandName: "sync",
-        abstract: "Reconcile the YAML tree with the current filesystem layout."
+        abstract: "Reconcile the YAML tree with the current filesystem layout.",
+        discussion: "Nested treedocs.yaml files mark delegated documentation roots. Sync keeps the child folder in the parent tree but does not merge descendants owned by the nested state file."
     )
 
     /// Shared repository selection options.

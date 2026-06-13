@@ -85,6 +85,11 @@ struct TreeScanner {
             }
 
             if isDirectory {
+                if containsNestedStateFile(at: childAbsolutePath) {
+                    result[childName] = TreeEntry(description: "", children: [:], isDirectory: true)
+                    continue
+                }
+
                 let children = try buildTree(root: root, relativePath: childRelativePath, ignoreMatcher: ignoreMatcher)
                 result[childName] = TreeEntry(description: "", children: children, isDirectory: true)
             } else {
@@ -93,5 +98,13 @@ struct TreeScanner {
         }
 
         return result
+    }
+
+    /// Returns whether a scanned child directory owns its own documentation state.
+    ///
+    /// The repository root's state file is ignored by standard excludes before scanning begins, but a
+    /// `treedocs.yaml` inside a child directory marks a delegated subtree boundary for the parent.
+    private func containsNestedStateFile(at directory: Path) -> Bool {
+        (directory + Path("treedocs.yaml")).isFile
     }
 }

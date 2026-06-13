@@ -5,7 +5,8 @@ struct CheckCommand: ParsableCommand {
     /// Command metadata for non-mutating drift checks.
     static let configuration = CommandConfiguration(
         commandName: "check",
-        abstract: "Validate the stored tree against the filesystem and report drift."
+        abstract: "Validate the stored tree against the filesystem and report drift.",
+        discussion: "Filesystem validation stops at nested treedocs.yaml boundaries. A parent tree should document the delegated child folder, not the files and directories beneath it."
     )
 
     /// Shared repository selection options.

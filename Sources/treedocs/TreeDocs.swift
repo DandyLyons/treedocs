@@ -9,6 +9,7 @@ struct TreeDocs: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "treedocs",
         abstract: "Generate and maintain a tree-style documentation for your codebase, defined in a treedocs.yaml file.",
+        discussion: "Scanner-backed commands respect ignore files and treat nested treedocs.yaml files as documentation boundaries: the parent records that child folder, but descendants are owned by the nested state file.",
         subcommands: [
             InitCommand.self,
             SyncCommand.self,

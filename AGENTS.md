@@ -43,6 +43,7 @@ swift test --filter "IgnoreMatcher"
 - `update` supports description changes plus `--add-reference`, `--remove-reference`, `--link`, and `--clear-link`
 - `ls` renders the documentation tree and supports subtree rendering with an optional positional path argument
 - `path` searches both documented paths and descriptions
+- Scanner-backed commands stop at nested `treedocs.yaml` files: the parent keeps the child folder as a delegated directory entry and does not own descendants beneath that boundary
 
 ## Schema Notes
 - `treedocs.yaml` requires a canonical JSON Schema definition for editor, CI, test, and external tooling validation
@@ -55,6 +56,7 @@ swift test --filter "IgnoreMatcher"
 ## Quirks
 - `.git`, `.build`, `.swiftpm`, `.treedocs`, `.agents`, `.opencode`, `node_modules`, and `treedocs.yaml` are treated as standard excludes by the scanner
 - Ignore loading merges `exclude`, `.gitignore`, and `.treedocs/.treedocs_ignore`, including negation patterns
+- A `treedocs.yaml` inside a child directory marks a nested documentation boundary before descendant scanning; do not duplicate that subtree in the parent state
 - Local sandboxed `swift run` or `swift test` calls may fail if SwiftPM cannot write its user cache; Solo-managed `swift build` and `swift test` processes are the reliable verification path in this repo
 - Build artifacts live in `.build/`
 - `solo.yml` defines Solo command processes for `swift build`, `swift test`, and `swift run`

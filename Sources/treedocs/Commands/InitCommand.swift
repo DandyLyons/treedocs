@@ -5,7 +5,8 @@ struct InitCommand: ParsableCommand {
     /// Command metadata for creating initial treedocs state.
     static let configuration = CommandConfiguration(
         commandName: "init",
-        abstract: "Scan the repository and create an initial treedocs.yaml."
+        abstract: "Scan the repository and create an initial treedocs.yaml.",
+        discussion: "If a child directory already contains treedocs.yaml, init records that directory as a delegated documentation root and does not include its descendants in the parent tree."
     )
 
     /// Shared repository selection options.
