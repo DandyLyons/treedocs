@@ -25,6 +25,9 @@ struct CheckReport {
     /// Stored documentation paths that no longer exist in the scanned filesystem tree.
     var extraPaths: [String]
 
+    /// Paths whose stored entry kind no longer matches the scanned filesystem kind.
+    var changedPaths: [String]
+
     /// Child directories whose own `treedocs.yaml` takes precedence for descendants.
     var nestedBoundaries: [String]
 
@@ -46,6 +49,7 @@ struct CheckReport {
             || !missingDescriptions.isEmpty
             || !missingPaths.isEmpty
             || !extraPaths.isEmpty
+            || !changedPaths.isEmpty
             || !shadowedPaths.isEmpty
     }
 
@@ -170,6 +174,7 @@ struct TreedocsService {
             missingDescriptions: missingDescriptions,
             missingPaths: TreeOperations.missingPaths(stored: current.tree, scanned: scan.tree),
             extraPaths: TreeOperations.extraPaths(stored: current.tree, scanned: scan.tree),
+            changedPaths: TreeOperations.changedPaths(stored: current.tree, scanned: scan.tree),
             nestedBoundaries: scan.nestedBoundaries,
             shadowedPaths: TreeOperations.shadowedPaths(stored: current.tree, nestedBoundaries: scan.nestedBoundaries),
             severity: loaded.config.resolvedCheckSeverity

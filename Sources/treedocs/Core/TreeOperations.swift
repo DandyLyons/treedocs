@@ -168,6 +168,18 @@ enum TreeOperations {
         sortedDifference(lhs: pathSet(stored), rhs: pathSet(scanned))
     }
 
+    /// Finds paths whose stored file-or-directory kind differs from the scanned filesystem kind.
+    static func changedPaths(stored: [String: TreeEntry], scanned: [String: TreeEntry]) -> [String] {
+        let storedEntries = entryMap(stored)
+        let scannedEntries = entryMap(scanned)
+        return storedEntries.keys.filter { path in
+            guard let storedEntry = storedEntries[path], let scannedEntry = scannedEntries[path] else {
+                return false
+            }
+            return storedEntry.isDirectory != scannedEntry.isDirectory
+        }.sorted()
+    }
+
     /// Finds stored descendant paths that are owned by nested `treedocs.yaml` boundaries.
     static func shadowedPaths(stored: [String: TreeEntry], nestedBoundaries: [String]) -> [String] {
         let storedPaths = pathSet(stored)
@@ -250,6 +262,10 @@ enum TreeOperations {
 
     private static func pathSet(_ tree: [String: TreeEntry]) -> Set<String> {
         Set(flatten(tree).map(\.0))
+    }
+
+    private static func entryMap(_ tree: [String: TreeEntry]) -> [String: TreeEntry] {
+        Dictionary(uniqueKeysWithValues: flatten(tree))
     }
 
     private static func sortedDifference(lhs: Set<String>, rhs: Set<String>) -> [String] {

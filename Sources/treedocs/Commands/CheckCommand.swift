@@ -24,6 +24,7 @@ struct CheckCommand: ParsableCommand {
 
         printSection("Missing paths", values: report.missingPaths)
         printSection("Extra documented paths", values: report.extraPaths)
+        printSection("Changed paths", values: report.changedPaths)
         printSection("Nested documentation boundaries", values: report.nestedBoundaries)
         printSection("Shadowed child-owned paths", values: report.shadowedPaths)
         printSection("Missing descriptions", values: report.missingDescriptions)
@@ -44,7 +45,7 @@ struct CheckCommand: ParsableCommand {
         guard report.shouldFail else { return [] }
 
         var steps: [String] = []
-        if !report.schemaErrors.isEmpty || report.hasSignatureDrift || !report.missingPaths.isEmpty || !report.extraPaths.isEmpty || !report.shadowedPaths.isEmpty {
+        if !report.schemaErrors.isEmpty || report.hasSignatureDrift || !report.missingPaths.isEmpty || !report.extraPaths.isEmpty || !report.changedPaths.isEmpty || !report.shadowedPaths.isEmpty {
             steps.append("Run `treedocs sync` to reconcile filesystem changes, refresh the stored signature, and repair generated schema state.")
         }
         if !report.shadowedPaths.isEmpty {

@@ -97,6 +97,26 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Check reports changed paths when filesystem kind changes`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("Sources", contents: "old file")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        try workspace.remove("Sources")
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"new directory\")")
+
+        let report = try service.check(at: workspace.root.string)
+        #expect(report.hasSignatureDrift)
+        #expect(report.changedPaths == ["Sources"])
+        #expect(report.missingPaths == ["Sources/App.swift"])
+        #expect(report.extraPaths.isEmpty)
+        #expect(report.hasIssues)
+        #expect(report.shouldFail)
+        #expect(CheckCommand.nextSteps(for: report).contains("Run `treedocs sync` to reconcile filesystem changes, refresh the stored signature, and repair generated schema state."))
+    }
+
+    @Test
     func `Check reports nested boundaries and parent child conflicts`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()

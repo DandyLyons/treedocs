@@ -94,6 +94,24 @@ struct ScannerAndSignatureTests {
     }
 
     @Test
+    func `Signature ignores changes inside nested treedocs boundaries`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.writeFile("README.md", contents: "")
+        try workspace.writeFile("Vendor/Plugin/treedocs.yaml", contents: "project:\n  name: plugin\ntree: {}")
+        try workspace.writeFile("Vendor/Plugin/Sources/Plugin.swift", contents: "")
+
+        let scan1 = try TreeScanner().scan(root: workspace.root, ignoreMatcher: IgnoreMatcher(patterns: []))
+
+        try workspace.writeFile("Vendor/Plugin/Sources/New.swift", contents: "")
+        try workspace.remove("Vendor/Plugin/Sources/Plugin.swift")
+
+        let scan2 = try TreeScanner().scan(root: workspace.root, ignoreMatcher: IgnoreMatcher(patterns: []))
+        #expect(scan2.signature == scan1.signature)
+        #expect(scan2.normalizedPaths == scan1.normalizedPaths)
+        #expect(scan2.nestedBoundaries == ["Vendor/Plugin"])
+    }
+
+    @Test
     func `Signature is deterministic and changes on structural updates`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("README.md", contents: "Hello")
