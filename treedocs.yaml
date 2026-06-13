@@ -14,8 +14,8 @@ tree:
     InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
     _doc: Supplemental project documentation and schema assets.
     treedocs.schema.json: JSON Schema describing the expected treedocs.yaml structure.
-  LICENSE: ''
-  Package.resolved: ''
+  LICENSE: MIT license terms for using, copying, modifying, and distributing treedocs.
+  Package.resolved: Swift Package Manager dependency resolution lockfile for reproducible builds.
   Package.swift: Swift Package Manager manifest defining products, targets, and dependencies.
   README.md: User-facing overview, installation, and command usage documentation.
   Sources:
@@ -24,25 +24,25 @@ tree:
       Commands:
         CheckCommand.swift: Implements validation for signature drift and missing descriptions.
         Common.swift: Shared CLI options and helpers used by multiple commands.
-        ConfigCommand.swift: ''
+        ConfigCommand.swift: Implements configuration discovery commands for listing treedocs-related files.
         InitCommand.swift: Creates an initial treedocs.yaml file for a repository.
         InspectCommand.swift: Displays documentation for a path, including resolved links and recursive views.
-        LsCommand.swift: ''
-        PathCommand.swift: ''
-        PromptsCommand.swift: ''
-        ShowCommand.swift: ''
+        LsCommand.swift: Renders the documented repository tree or a requested subtree.
+        PathCommand.swift: Finds the first documented path matching a query across paths and descriptions.
+        PromptsCommand.swift: Generates maintenance prompts for filling missing treedocs descriptions.
+        ShowCommand.swift: Renders documentation for a single path, including validation unless skipped.
         SyncCommand.swift: Reconciles treedocs.yaml with the current filesystem while preserving descriptions.
         UpdateCommand.swift: Updates descriptions, references, and links for documented paths.
         _doc: ArgumentParser command implementations for treedocs subcommands.
       Core:
         ConfigLoader.swift: Loads and validates treedocs configuration from YAML.
         IgnoreMatcher.swift: Applies standard excludes, gitignore rules, and treedocs ignore patterns.
-        LinkResolver.swift: ''
-        PathUtilities.swift: ''
+        LinkResolver.swift: Resolves internal and external links between documented tree entries.
+        PathUtilities.swift: Defines shared errors, string cleanup helpers, and repository-relative path utilities.
         TreeOperations.swift: Mutates and queries documentation tree entries.
         TreeRenderer.swift: Formats documentation trees for CLI output.
         TreeScanner.swift: Scans repository files into the canonical documentation tree.
-        TreedocsFileStore.swift: ''
+        TreedocsFileStore.swift: Reads and writes typed treedocs.yaml state files at the filesystem boundary.
         TreedocsService.swift: High-level orchestration layer for CLI workflows.
         _doc: Core services for loading, scanning, rendering, and updating treedocs data.
       Models:
@@ -54,16 +54,16 @@ tree:
       treedocs.docc:
         GettingStarted.md: DocC tutorial or guide for getting started with treedocs.
         _doc: DocC documentation catalog for generated package documentation.
-        treedocs.md: ''
+        treedocs.md: DocC landing page for the treedocs package documentation.
   Tests:
     _doc: Swift Testing test suite for treedocs behavior.
     treedocsTests:
       IgnoreMatcherTests.swift: Tests ignore pattern loading, matching, and negation behavior.
       ScannerAndSignatureTests.swift: Tests filesystem scanning and signature generation.
-      SchemaAndConfigTests.swift: ''
-      TestSupport.swift: ''
+      SchemaAndConfigTests.swift: Tests YAML schema parsing, configuration precedence, and tree entry serialization.
+      TestSupport.swift: Shared temporary workspace helpers for treedocs tests.
       WorkflowTests.swift: End-to-end command workflow tests covering common CLI usage.
       _doc: Unit and workflow tests for the treedocs package.
-  solo.yml: ''
+  solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.
   tmp:
-    _doc: ''
+    _doc: Project-local temporary workspace for scratch files and generated artifacts.
