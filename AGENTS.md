@@ -23,6 +23,9 @@ swift test --filter "Scanner and Signature"
 swift test --filter "IgnoreMatcher"
 ```
 
+## GitHub
+- Use the `DandyLyons` GitHub account for this repository before running `gh` commands: `gh auth switch --user DandyLyons`
+
 ## Architecture
 - Executable entry point: `Sources/treedocs/TreeDocs.swift`
 - CLI commands live in `Sources/treedocs/Commands/`

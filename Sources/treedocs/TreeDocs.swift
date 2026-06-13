@@ -8,7 +8,7 @@ struct TreeDocs: ParsableCommand {
     /// The command name, abstract, and available subcommands for the CLI.
     static let configuration = CommandConfiguration(
         commandName: "treedocs",
-        abstract: "Generate and maintain a YAML-based architectural map of a repository.",
+        abstract: "Generate and maintain a tree-style documentation for your codebase, defined in a treedocs.yaml file.",
         subcommands: [
             InitCommand.self,
             SyncCommand.self,
@@ -44,9 +44,14 @@ enum TreeDocsMain {
     /// Only the first non-option argument is considered for rewriting. Existing commands, help flags,
     /// and unknown option-like arguments are left untouched so ArgumentParser can handle them normally.
     ///
+    /// - Parameter rawArguments: The full process argument vector, including the executable path.
     /// - Returns: The command-line arguments that should be passed to ArgumentParser.
-    private static func rewrittenArguments() -> [String] {
-        var arguments = Array(CommandLine.arguments.dropFirst())
+    static func rewrittenArguments(_ rawArguments: [String] = CommandLine.arguments) -> [String] {
+        var arguments = Array(rawArguments.dropFirst())
+        if arguments.isEmpty {
+            return ["show", "."]
+        }
+
         let commands: Set<String> = [
             "init",
             "sync",

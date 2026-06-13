@@ -21,7 +21,7 @@ struct TreeRenderer {
         let renderedTree: [String: TreeEntry]
         let pathPrefix: String
 
-        if let subtreePath, let normalized = subtreePath.trimmedNilIfEmpty {
+        if let subtreePath, let normalized = RelativePath.normalize(subtreePath).trimmedNilIfEmpty {
             guard let entry = TreeOperations.entry(at: normalized, in: tree) else {
                 throw TreeDocsError.message("Path not found in treedocs tree: \(normalized)")
             }

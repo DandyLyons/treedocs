@@ -185,6 +185,22 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Bare treedocs invocation runs checked show on current directory`() throws {
+        #expect(TreeDocsMain.rewrittenArguments(["treedocs"]) == ["show", "."])
+
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+
+        let output = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
+        #expect(output.contains("Warning: treedocs discrepancies found"))
+        #expect(output.contains("README.md"))
+    }
+
+    @Test
     func `Config file discovery and fill prompt support command scaffolding`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()

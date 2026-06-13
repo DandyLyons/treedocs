@@ -2,9 +2,10 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:4e5fbf044cba54b8bee63102833f5de7acd587e00f158caed1167c83545fd559
+signature: sha256:f9ed91d6881c3bed58a07498be09e182c0e2db3738fb072eaf80207432b351ac
 tree:
   .gitignore: ''
+  .spi.yml: ''
   .vscode:
     _doc: ''
     launch.json: ''
@@ -12,6 +13,7 @@ tree:
   DOCS:
     InitialSpecs.md: ''
     _doc: ''
+    treedocs.schema.json: ''
   LICENSE: ''
   Package.resolved: ''
   Package.swift: ''
@@ -22,10 +24,13 @@ tree:
       Commands:
         CheckCommand.swift: ''
         Common.swift: ''
+        ConfigCommand.swift: ''
         InitCommand.swift: ''
         InspectCommand.swift: ''
         LsCommand.swift: ''
         PathCommand.swift: ''
+        PromptsCommand.swift: ''
+        ShowCommand.swift: ''
         SyncCommand.swift: ''
         UpdateCommand.swift: ''
         _doc: ''
@@ -46,6 +51,10 @@ tree:
         _doc: ''
       TreeDocs.swift: ''
       _doc: ''
+      treedocs.docc:
+        GettingStarted.md: ''
+        _doc: ''
+        treedocs.md: ''
   Tests:
     _doc: ''
     treedocsTests:
@@ -56,3 +65,5 @@ tree:
       WorkflowTests.swift: ''
       _doc: ''
   solo.yml: ''
+  tmp:
+    _doc: ''
