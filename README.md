@@ -38,6 +38,8 @@ The YAML format should be defined by a canonical JSON Schema so the CLI, tests, 
 
 Directory entries use `_doc` for their description. Entries can also include `references` and `_link`.
 
+YAML comments in `treedocs.yaml` are not preserved when the CLI loads and rewrites the file. Store durable notes as descriptions or `references` instead of comments.
+
 Example:
 
 ```yaml
@@ -51,7 +53,10 @@ tree:
     _doc: Source files for the CLI
     treedocs:
       Core:
-        _doc: Core scanning, rendering, and config logic
+        _doc:
+          description: Core scanning, rendering, and config logic
+          references:
+            - DOCS/InitialSpecs.md
   README.md: Project overview
 ```
 
