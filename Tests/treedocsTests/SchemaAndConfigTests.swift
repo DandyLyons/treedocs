@@ -98,6 +98,36 @@ struct SchemaAndConfigTests {
     }
 
     @Test
+    func `Store rewrites do not preserve YAML comments but keep structured notes`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.writeFile("treedocs.yaml", contents: """
+        # Root-level comment that should not survive serialization.
+        project:
+          name: Example
+          version: "1.0.0"
+          last_updated: "2026-06-13"
+        signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        tree:
+          README.md:
+            # Inline note that belongs in references instead.
+            description: Project readme
+            references:
+              - DOCS/README.md
+        """)
+
+        var loaded = try workspace.loadState()
+        loaded.tree["Package.swift"] = TreeEntry(description: "Package manifest")
+        try workspace.saveState(loaded)
+
+        let rewritten = try String(contentsOf: (workspace.root + Path("treedocs.yaml")).url, encoding: .utf8)
+        let roundTrip = try workspace.loadState()
+        #expect(!rewritten.contains("Root-level comment"))
+        #expect(!rewritten.contains("Inline note"))
+        #expect(TreeOperations.entry(at: "README.md", in: roundTrip.tree)?.references == ["DOCS/README.md"])
+        #expect(TreeOperations.entry(at: "Package.swift", in: roundTrip.tree)?.description == "Package manifest")
+    }
+
+    @Test
     func `YAML schema round-trips strings, objects, nested folders, links, and references`() throws {
         let yaml = """
         project:
