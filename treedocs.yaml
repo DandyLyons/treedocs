@@ -33,8 +33,8 @@ tree:
         InspectCommand.swift: Displays documentation for a path, including resolved
           links and recursive views.
         LsCommand.swift: Renders the documented repository tree or a requested subtree.
-        NooraMissingDescriptionCollector.swift: Collects paths that are missing descriptions in the treedocs.yaml
-          using Noora for interactive CLI prompts.
+        NooraMissingDescriptionCollector.swift: Collects paths that are missing descriptions
+          in the treedocs.yaml using Noora for interactive CLI prompts.
         PathCommand.swift: Finds the first documented path matching a query across
           paths and descriptions.
         PromptsCommand.swift: Generates maintenance prompts for filling missing treedocs
