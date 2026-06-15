@@ -27,6 +27,18 @@ swift run treedocs path renderer
 
 Run `swift run treedocs --help` for the full command surface.
 
+## Interactive CLI Behavior
+Commands with interactive workflows open terminal UI by default when stdin and stdout are attached to a TTY. For example, `treedocs sync` lets you fill missing descriptions before saving when it is run from an interactive terminal.
+
+Use `-n, --non-interactive` to opt out explicitly in scripts or local automation:
+
+```bash
+swift run treedocs sync --non-interactive
+swift run treedocs sync -n
+```
+
+Non-TTY contexts, such as CI and redirected input/output, skip interactive UI automatically.
+
 ## treedocs.yaml Shape
 `treedocs.yaml` contains:
 - `project`: metadata such as `name`, `version`, and `last_updated`

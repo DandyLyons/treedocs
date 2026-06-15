@@ -77,6 +77,15 @@ struct InspectReport {
     var recursiveOutput: String?
 }
 
+/// Result of a sync operation.
+struct SyncResult {
+    /// The state model after sync handling.
+    var file: TreedocsFile
+
+    /// Whether `treedocs.yaml` was written.
+    var saved: Bool
+}
+
 /// Coordinates repository scanning, state storage, rendering, and tree mutations.
 ///
 /// `TreedocsService` is the command-facing facade for core behavior. It validates repository paths,
@@ -125,14 +134,32 @@ struct TreedocsService {
     ///
     /// The scanner supplies the current structure, then existing descriptions, references, and links
     /// are preserved for compatible paths. In interactive mode, missing descriptions are requested
-    /// from standard input before the merged file is saved.
+    /// through the supplied collector before the merged file is saved.
     ///
     /// - Parameters:
     ///   - rootPath: The repository root path supplied by the caller.
-    ///   - interactive: Whether to prompt for missing descriptions while syncing.
+    ///   - interactive: Whether to collect missing descriptions while syncing.
+    ///   - missingDescriptionCollector: The collector used for interactive description entry.
     /// - Returns: The saved, merged state model.
     /// - Throws: `TreeDocsError` for invalid paths or missing state, plus filesystem/configuration errors from loading, scanning, or saving.
-    func sync(at rootPath: String, interactive: Bool) throws -> TreedocsFile {
+    func sync(
+        at rootPath: String,
+        interactive: Bool,
+        missingDescriptionCollector: MissingDescriptionCollector? = nil
+    ) throws -> TreedocsFile {
+        try syncResult(
+            at: rootPath,
+            interactive: interactive,
+            missingDescriptionCollector: missingDescriptionCollector
+        ).file
+    }
+
+    /// Reconciles `treedocs.yaml` with the current filesystem and reports whether state was saved.
+    func syncResult(
+        at rootPath: String,
+        interactive: Bool,
+        missingDescriptionCollector: MissingDescriptionCollector? = nil
+    ) throws -> SyncResult {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
         let current = try store.load(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
@@ -145,11 +172,23 @@ struct TreedocsService {
         )
 
         if interactive {
-            promptForMissingDescriptions(in: &merged.tree)
+            guard let missingDescriptionCollector else {
+                throw TreeDocsError.message("Interactive sync requires an interactive description collector.")
+            }
+
+            let missingPaths = TreeOperations.missingDescriptionPaths(in: merged.tree)
+            if !missingPaths.isEmpty {
+                switch try missingDescriptionCollector.collectDescriptions(for: missingPaths) {
+                case let .save(descriptions):
+                    TreeOperations.applyDescriptions(descriptions, to: &merged.tree)
+                case .cancel:
+                    return SyncResult(file: current, saved: false)
+                }
+            }
         }
 
         try store.save(merged, at: repositoryPaths.stateFile)
-        return merged
+        return SyncResult(file: merged, saved: true)
     }
 
     /// Checks whether stored documentation is current.
@@ -338,6 +377,8 @@ struct TreedocsService {
                         statusOverrides[path] = status
                     }
                 }
+            } else {
+                lines.append(green("✅ The treedocs below is up to date with the filesystem."))
             }
         }
 
@@ -356,6 +397,10 @@ struct TreedocsService {
             throw TreeDocsError.message("Link cycle detected: \(chain.joined(separator: " -> "))")
         }
         return lines.joined(separator: "\n")
+    }
+
+    private func green(_ message: String) -> String {
+        "\u{001B}[32m\(message)\u{001B}[0m"
     }
 
     private func scopedDiscrepancyMessage(subtreePath: String, subtreeHasIssues: Bool, tree: [String: TreeEntry]) -> String {
@@ -514,36 +559,6 @@ struct TreedocsService {
             return String(path.dropFirst(prefix.count))
         }
         return path
-    }
-
-    /// Prompts for missing descriptions in a tree.
-    ///
-    /// The traversal is deterministic so prompts appear in sorted path order. Blank or whitespace-only
-    /// answers are ignored, leaving the entry marked as needing a description.
-    ///
-    /// - Parameters:
-    ///   - tree: The tree to update in place.
-    ///   - prefix: The current path prefix used while recursing.
-    private func promptForMissingDescriptions(in tree: inout [String: TreeEntry], prefix: String = "") {
-        for key in tree.keys.sorted() {
-            guard var entry = tree[key] else { continue }
-            let path = prefix.isEmpty ? key : prefix + "/" + key
-
-            if entry.needsDescription {
-                print("Description for \(path): ", terminator: "")
-                if let answer = readLine(), let trimmed = answer.trimmedNilIfEmpty {
-                    var documentation = entry.documentation ?? EntryDocumentation()
-                    documentation.description = trimmed
-                    entry.documentation = documentation
-                }
-            }
-
-            if entry.isDirectory {
-                promptForMissingDescriptions(in: &entry.children, prefix: path)
-            }
-
-            tree[key] = entry
-        }
     }
 
     /// Formats the current date for project metadata.

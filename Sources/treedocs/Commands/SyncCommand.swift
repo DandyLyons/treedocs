@@ -1,4 +1,5 @@
 import ArgumentParser
+import Darwin
 
 /// Implements the `treedocs sync` command.
 struct SyncCommand: ParsableCommand {
@@ -12,13 +13,27 @@ struct SyncCommand: ParsableCommand {
     /// Shared repository selection options.
     @OptionGroup var options: RepositoryOptions
 
-    /// Whether missing descriptions should be collected from standard input while syncing.
-    @Flag(help: "Prompt for descriptions on newly added entries.")
-    var interactive = false
-
     /// Reconciles the stored tree with the current filesystem and prints the resulting signature.
     mutating func run() throws {
-        let file = try TreedocsService().sync(at: options.path, interactive: interactive)
-        print("Synced treedocs.yaml (\(file.signature ?? "no signature"))")
+        let interactive = Self.shouldRunInteractively(
+            nonInteractive: options.nonInteractive,
+            stdinIsTTY: isatty(STDIN_FILENO) == 1,
+            stdoutIsTTY: isatty(STDOUT_FILENO) == 1
+        )
+
+        let result = try TreedocsService().syncResult(
+            at: options.path,
+            interactive: interactive,
+            missingDescriptionCollector: interactive ? NooraMissingDescriptionCollector() : nil
+        )
+        if result.saved {
+            print("Synced treedocs.yaml (\(result.file.signature ?? "no signature"))")
+        } else {
+            print("Sync cancelled; no changes saved.")
+        }
+    }
+
+    static func shouldRunInteractively(nonInteractive: Bool, stdinIsTTY: Bool, stdoutIsTTY: Bool) -> Bool {
+        !nonInteractive && stdinIsTTY && stdoutIsTTY
     }
 }

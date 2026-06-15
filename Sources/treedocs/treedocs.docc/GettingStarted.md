@@ -32,6 +32,15 @@ After the filesystem changes, run `sync` to reconcile `treedocs.yaml` with the c
 treedocs sync
 ```
 
+When stdin and stdout are attached to a TTY, `sync` opens an interactive flow for filling missing descriptions before saving. Use `-n, --non-interactive` to skip terminal UI explicitly:
+
+```bash
+treedocs sync --non-interactive
+treedocs sync -n
+```
+
+Non-TTY contexts skip interactive UI automatically.
+
 Use `check` in local workflows or CI to detect stale signatures and missing descriptions:
 
 ```bash

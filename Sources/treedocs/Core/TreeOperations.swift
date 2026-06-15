@@ -158,6 +158,37 @@ enum TreeOperations {
             .map(\.0)
     }
 
+    /// Applies description updates to existing tree entries.
+    ///
+    /// Description text is trimmed and blank descriptions are ignored. Existing references and links
+    /// are preserved while the description field is replaced for matching paths.
+    ///
+    /// - Parameters:
+    ///   - descriptions: Description text keyed by relative tree path.
+    ///   - tree: The tree to update in place.
+    /// - Returns: Paths that were found and updated.
+    @discardableResult
+    static func applyDescriptions(_ descriptions: [String: String], to tree: inout [String: TreeEntry]) -> [String] {
+        var updatedPaths: [String] = []
+
+        for path in descriptions.keys.sorted() {
+            guard let description = descriptions[path]?.trimmedNilIfEmpty else {
+                continue
+            }
+
+            let updated = updateEntry(at: path, in: &tree) { entry in
+                var documentation = entry.documentation ?? EntryDocumentation()
+                documentation.description = description
+                entry.documentation = documentation
+            }
+            if updated {
+                updatedPaths.append(path)
+            }
+        }
+
+        return updatedPaths
+    }
+
     /// Finds paths present in the scanned filesystem but absent from stored documentation.
     static func missingPaths(stored: [String: TreeEntry], scanned: [String: TreeEntry]) -> [String] {
         sortedDifference(lhs: pathSet(scanned), rhs: pathSet(stored))

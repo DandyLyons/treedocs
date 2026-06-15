@@ -50,3 +50,17 @@ final class TestWorkspace {
         try TreedocsFileStore().load(at: root + Path("treedocs.yaml"))
     }
 }
+
+final class StubMissingDescriptionCollector: MissingDescriptionCollector {
+    let result: MissingDescriptionCollectionResult
+    private(set) var requestedPaths: [String] = []
+
+    init(result: MissingDescriptionCollectionResult) {
+        self.result = result
+    }
+
+    func collectDescriptions(for paths: [String]) throws -> MissingDescriptionCollectionResult {
+        requestedPaths = paths
+        return result
+    }
+}

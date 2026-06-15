@@ -75,8 +75,103 @@ struct WorkflowTests {
             clearLink: false
         )
 
-        let synced = try service.sync(at: workspace.root.string, interactive: true)
+        let collector = StubMissingDescriptionCollector(result: .save([:]))
+        let synced = try service.sync(
+            at: workspace.root.string,
+            interactive: true,
+            missingDescriptionCollector: collector
+        )
         #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.description == "Project readme")
+        #expect(collector.requestedPaths.isEmpty)
+    }
+
+    @Test
+    func `Interactive sync applies entered descriptions in one save`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        let collector = StubMissingDescriptionCollector(result: .save([
+            "README.md": " Project readme ",
+            "Sources": "Source files",
+            "Sources/App.swift": "Application entry point",
+        ]))
+        let synced = try service.sync(
+            at: workspace.root.string,
+            interactive: true,
+            missingDescriptionCollector: collector
+        )
+
+        #expect(collector.requestedPaths == ["README.md", "Sources", "Sources/App.swift"])
+        #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.description == "Project readme")
+        #expect(TreeOperations.entry(at: "Sources", in: synced.tree)?.description == "Source files")
+        #expect(TreeOperations.entry(at: "Sources/App.swift", in: synced.tree)?.description == "Application entry point")
+        try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
+    }
+
+    @Test
+    func `Interactive sync cancel does not write reconciliation or partial descriptions`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        let before = try (workspace.root + Path("treedocs.yaml")).read()
+
+        try workspace.writeFile("New.swift", contents: "print(\"new\")")
+        let collector = StubMissingDescriptionCollector(result: .cancel)
+        _ = try service.sync(
+            at: workspace.root.string,
+            interactive: true,
+            missingDescriptionCollector: collector
+        )
+
+        let after = try (workspace.root + Path("treedocs.yaml")).read()
+        #expect(after == before)
+        #expect(collector.requestedPaths == ["New.swift", "README.md"])
+    }
+
+    @Test
+    func `Interactive sync skips blank descriptions and preserves existing metadata`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: nil,
+            addReferences: ["DOCS/README.md"],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+
+        let collector = StubMissingDescriptionCollector(result: .save([
+            "README.md": "Project readme",
+            "Sources": "   ",
+            "Sources/App.swift": "Application entry point",
+        ]))
+        let synced = try service.sync(
+            at: workspace.root.string,
+            interactive: true,
+            missingDescriptionCollector: collector
+        )
+
+        #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.description == "Project readme")
+        #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.references == ["DOCS/README.md"])
+        #expect(TreeOperations.entry(at: "Sources", in: synced.tree)?.description == "")
+        #expect(TreeOperations.entry(at: "Sources/App.swift", in: synced.tree)?.description == "Application entry point")
+    }
+
+    @Test
+    func `Sync command runs interactively only for TTY contexts without opt-out`() {
+        #expect(SyncCommand.shouldRunInteractively(nonInteractive: false, stdinIsTTY: true, stdoutIsTTY: true))
+        #expect(!SyncCommand.shouldRunInteractively(nonInteractive: true, stdinIsTTY: true, stdoutIsTTY: true))
+        #expect(!SyncCommand.shouldRunInteractively(nonInteractive: false, stdinIsTTY: false, stdoutIsTTY: true))
+        #expect(!SyncCommand.shouldRunInteractively(nonInteractive: false, stdinIsTTY: true, stdoutIsTTY: false))
     }
 
     @Test
@@ -575,6 +670,28 @@ struct WorkflowTests {
         #expect(!output.contains("Warning: this subtree has treedocs discrepancies"))
         #expect(!output.contains("foo/"))
         #expect(output.contains("App.swift"))
+    }
+
+    @Test
+    func `Show reports no drift when checked state is clean`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: "Project readme",
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+
+        let output = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
+
+        #expect(output.contains("\u{001B}[32mNo drift.\u{001B}[0m"))
+        #expect(output.contains("README.md"))
     }
 
     @Test

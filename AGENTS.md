@@ -4,6 +4,7 @@
 - **Language**: Swift 6.0 (SPM)
 - **Platform**: macOS 13+
 - **CLI framework**: apple/swift-argument-parser
+- **Interactive CLI UX**: tuist/Noora
 - **YAML Parsing**: jpsim/Yams
 - **Schema Contract**: `treedocs.yaml` should be defined by JSON Schema
 - **Filepath Utilities**: kylef/PathKit
@@ -40,6 +41,7 @@ swift test --filter "IgnoreMatcher"
 ## Implemented CLI Surface
 - Root subcommands: `init`, `sync`, `check`, `inspect`, `update`, `ls`, `path`
 - Shared repository option: `-p, --path <path>`
+- Shared interactive opt-out: `--non-interactive`
 - `init` writes `treedocs.yaml` with project metadata, signature, and empty descriptions
 - `sync` preserves existing metadata while reconciling filesystem changes
 - `check` reports signature drift and missing descriptions, and respects configured severity
@@ -48,6 +50,18 @@ swift test --filter "IgnoreMatcher"
 - `ls` renders the documentation tree and supports subtree rendering with an optional positional path argument
 - `path` searches both documented paths and descriptions
 - Scanner-backed commands stop at nested `treedocs.yaml` files: the parent keeps the child folder as a delegated directory entry and does not own descendants beneath that boundary
+
+## Interactive CLI Convention
+- Commands with interactive behavior should default to interactive UI when stdin and stdout are attached to a suitable TTY
+- Non-TTY contexts must behave non-interactively automatically, even without `--non-interactive`
+- `-n, --non-interactive` is the canonical shared opt-out flag for scripts, CI, and explicit automation
+- Do not use `-i` for non-interactive mode because users commonly understand it as `--interactive`
+
+## Reading Dependency Docs
+### Noora 
+- `https://noora.tuist.dev/sitemap.xml`
+- Convert Noora docs pages to Markdown with `https://defuddle.md/<host>/<path>` 
+- Example conversion: `https://defuddle.md/noora.tuist.dev/components/alerts/error`
 
 ## Schema Notes
 - `treedocs.yaml` requires a canonical JSON Schema definition for editor, CI, test, and external tooling validation

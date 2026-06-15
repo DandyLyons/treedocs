@@ -1,6 +1,24 @@
 {
-  "originHash" : "5cc7942110cef22046c12274d0e64bb164cf723e77b7149a0b9390e506fd6af9",
+  "originHash" : "b8fd5c1398548abbda88c92d54f6ab8e4c5e76ec19ed7132365c60284cebfd46",
   "pins" : [
+    {
+      "identity" : "noora",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tuist/Noora",
+      "state" : {
+        "revision" : "70c6d1477a982f3e4cd46ed2d122e04e9d0a0b59",
+        "version" : "0.56.0"
+      }
+    },
+    {
+      "identity" : "path",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tuist/path",
+      "state" : {
+        "revision" : "7c74ac435e03a927c3a73134c48b61e60221abcb",
+        "version" : "0.3.8"
+      }
+    },
     {
       "identity" : "pathkit",
       "kind" : "remoteSourceControl",
@@ -8,6 +26,15 @@
       "state" : {
         "revision" : "3bfd2737b700b9a36565a8c94f4ad2b050a5e574",
         "version" : "1.0.1"
+      }
+    },
+    {
+      "identity" : "rainbow",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Rainbow",
+      "state" : {
+        "revision" : "cdf146ae671b2624917648b61c908d1244b98ca1",
+        "version" : "4.2.1"
       }
     },
     {
@@ -62,6 +89,15 @@
       "state" : {
         "revision" : "f299eb1cce78b2dd736d9a390ec0779d28678416",
         "version" : "0.13.1"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log",
+      "state" : {
+        "revision" : "92448c359f00ebe36ae97d3bd9086f13c7692b5a",
+        "version" : "1.13.2"
       }
     },
     {
