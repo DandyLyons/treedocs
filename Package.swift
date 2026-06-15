@@ -13,6 +13,7 @@ let package = Package(
         .package(url: "https://github.com/kylef/PathKit.git", from: "1.0.1"),
         .package(url: "https://github.com/ajevans99/swift-json-schema", from: "0.13.1"),
         .package(url: "https://github.com/tuist/Noora", from: "0.56.0"),
+        .package(url: "https://github.com/onevcat/Rainbow", from: "4.2.1"),
     ],
     targets: [
         .executableTarget(
@@ -23,6 +24,7 @@ let package = Package(
                 .product(name: "PathKit", package: "PathKit"),
                 .product(name: "JSONSchema", package: "swift-json-schema"),
                 .product(name: "Noora", package: "Noora"),
+                .product(name: "Rainbow", package: "Rainbow"),
             ]
         ),
         .testTarget(
@@ -32,6 +34,7 @@ let package = Package(
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "PathKit", package: "PathKit"),
                 .product(name: "JSONSchema", package: "swift-json-schema"),
+                .product(name: "Rainbow", package: "Rainbow"),
             ]
         ),
     ]

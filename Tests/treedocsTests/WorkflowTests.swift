@@ -1,8 +1,9 @@
 import Testing
 import PathKit
+import Rainbow
 @testable import treedocs
 
-@Suite("Workflow")
+@Suite("Workflow", .serialized)
 struct WorkflowTests {
     @Test
     func `Init creates treedocs.yaml and sync preserves existing descriptions while adding and removing paths`() throws {
@@ -376,6 +377,7 @@ struct WorkflowTests {
 
     @Test
     func `Show colors discrepancy warning and renders missing filesystem entries by severity`() throws {
+        try withRainbowConsoleOutput {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
@@ -393,17 +395,18 @@ struct WorkflowTests {
         try workspace.writeFile("foo/bar.txt", contents: "new")
 
         let errorOutput = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
-        #expect(errorOutput.contains("\u{001B}[1;33mWarning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report.\u{001B}[0m"))
-        #expect(errorOutput.contains("\u{001B}[1;31mfoo/\u{001B}[0m"))
-        #expect(errorOutput.contains("└── \u{001B}[1;31mbar.txt\u{001B}[0m"))
+        #expect(errorOutput.contains("Warning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report.".yellow.bold))
+        #expect(errorOutput.contains("foo/".red.bold))
+        #expect(errorOutput.contains("└── \("bar.txt".red.bold)"))
 
         var state = try workspace.loadState()
         state.overrides = TreedocsConfig(checkSeverity: .warn)
         try workspace.saveState(state)
 
         let warningOutput = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
-        #expect(warningOutput.contains("\u{001B}[1;33mfoo/\u{001B}[0m"))
-        #expect(warningOutput.contains("└── \u{001B}[1;33mbar.txt\u{001B}[0m"))
+        #expect(warningOutput.contains("foo/".yellow.bold))
+        #expect(warningOutput.contains("└── \("bar.txt".yellow.bold)"))
+        }
     }
 
     @Test
@@ -525,6 +528,7 @@ struct WorkflowTests {
 
     @Test
     func `ls renders refs and links and path returns a raw matching path`() throws {
+        try withRainbowConsoleOutput {
         let workspace = try TestWorkspace()
         try workspace.saveState(
             TreedocsFile(
@@ -544,10 +548,10 @@ struct WorkflowTests {
 
         let service = try workspace.service()
         let rendered = try service.renderTree(at: workspace.root.string, subtreePath: nil)
-        #expect(rendered.contains("\u{001B}[1;32m.\u{001B}[0m"))
-        #expect(rendered.contains("├── \u{001B}[1;33mdocs/\u{001B}[0m"))
-        #expect(rendered.contains("│   └── \u{001B}[1;32marchitecture/\u{001B}[0m [link->src/api]"))
-        #expect(rendered.contains("    └── \u{001B}[1;32mapi/\u{001B}[0m [ref]"))
+        #expect(rendered.contains(".".green.bold))
+        #expect(rendered.contains("├── \("docs/".yellow.bold)"))
+        #expect(rendered.contains("│   └── \("architecture/".green.bold) [link->src/api]"))
+        #expect(rendered.contains("    └── \("api/".green.bold) [ref]"))
         #expect(rendered.contains("REST endpoint d..."))
 
         let errorRendered = try TreeRenderer().render(
@@ -555,16 +559,18 @@ struct WorkflowTests {
             subtreePath: nil,
             config: .defaults
         )
-        #expect(errorRendered.contains("└── \u{001B}[1;31mMissing.md\u{001B}[0m"))
+        #expect(errorRendered.contains("└── \("Missing.md".red.bold)"))
 
         let path = try service.findPath(at: workspace.root.string, query: "endpoint")
         #expect(path == "src/api")
         let missing = try service.findPath(at: workspace.root.string, query: "missing")
         #expect(missing == nil)
+        }
     }
 
     @Test
     func `Tree renderer formats root connectors colors metadata and descriptions exactly`() throws {
+        try withRainbowConsoleOutput {
         let tree = [
             "docs": TreeEntry(description: "Documentation", children: [
                 "guide.md": TreeEntry(description: "User guide", references: ["DOCS/GUIDE.md"]),
@@ -583,18 +589,20 @@ struct WorkflowTests {
         )
 
         #expect(rendered == """
-        \u{001B}[1;32m.\u{001B}[0m
-        ├── \u{001B}[1;32mdocs/\u{001B}[0m  Documentation
-        │   ├── \u{001B}[1;32mguide.md\u{001B}[0m [ref]  User guide
-        │   └── \u{001B}[1;31mmissing.md\u{001B}[0m
-        └── \u{001B}[1;32msrc/\u{001B}[0m  Source
-            ├── \u{001B}[1;32mapi/\u{001B}[0m [link->docs/guide.md]  API
-            └── \u{001B}[1;32mmain.swift\u{001B}[0m  Application entry point
+        \(".".green.bold)
+        ├── \("docs/".green.bold)  Documentation
+        │   ├── \("guide.md".green.bold) [ref]  User guide
+        │   └── \("missing.md".red.bold)
+        └── \("src/".green.bold)  Source
+            ├── \("api/".green.bold) [link->docs/guide.md]  API
+            └── \("main.swift".green.bold)  Application entry point
         """)
+        }
     }
 
     @Test
     func `Tree renderer formats requested directory subtree exactly`() throws {
+        try withRainbowConsoleOutput {
         let tree = [
             "src": TreeEntry(description: "Source", children: [
                 "Components": TreeEntry(description: "UI components", children: [
@@ -611,15 +619,17 @@ struct WorkflowTests {
         )
 
         #expect(rendered == """
-        \u{001B}[1;32msrc/\u{001B}[0m  Source
-        ├── \u{001B}[1;32mComponents/\u{001B}[0m  UI components
-        │   └── \u{001B}[1;32mButton.swift\u{001B}[0m  Reusable button
-        └── \u{001B}[1;32mmain.swift\u{001B}[0m  Application entry point
+        \("src/".green.bold)  Source
+        ├── \("Components/".green.bold)  UI components
+        │   └── \("Button.swift".green.bold)  Reusable button
+        └── \("main.swift".green.bold)  Application entry point
         """)
+        }
     }
 
     @Test
     func `Show warns on validation issues and renders requested subtree`() throws {
+        try withRainbowConsoleOutput {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
         try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
@@ -630,11 +640,12 @@ struct WorkflowTests {
         let checkedOutput = try service.show(at: workspace.root.string, path: "Sources", checkFirst: true)
         #expect(checkedOutput.contains("Warning: this subtree has treedocs discrepancies"))
         #expect(checkedOutput.contains("App.swift"))
-        #expect(checkedOutput.contains("\u{001B}[1;31mNew.swift\u{001B}[0m"))
+        #expect(checkedOutput.contains("New.swift".red.bold))
 
         let uncheckedOutput = try service.show(at: workspace.root.string, path: "Sources", checkFirst: false)
         #expect(!uncheckedOutput.contains("treedocs discrepancies"))
         #expect(uncheckedOutput.contains("App.swift"))
+        }
     }
 
     @Test
@@ -674,6 +685,7 @@ struct WorkflowTests {
 
     @Test
     func `Show reports no drift when checked state is clean`() throws {
+        try withRainbowConsoleOutput {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
@@ -690,8 +702,9 @@ struct WorkflowTests {
 
         let output = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
 
-        #expect(output.contains("\u{001B}[32mNo drift.\u{001B}[0m"))
+        #expect(output.contains("✅ The treedocs below is up to date with the filesystem.".green))
         #expect(output.contains("README.md"))
+        }
     }
 
     @Test

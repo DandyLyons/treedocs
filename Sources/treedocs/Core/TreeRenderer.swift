@@ -1,4 +1,5 @@
 import Foundation
+import Rainbow
 
 /// Renders documented tree entries as human-readable text.
 ///
@@ -16,17 +17,7 @@ struct TreeRenderer {
         case clean
         case warning
         case error
-
-        var ansiCode: String {
-            switch self {
-            case .clean: return "\u{001B}[1;32m"
-            case .warning: return "\u{001B}[1;33m"
-            case .error: return "\u{001B}[1;31m"
-            }
-        }
     }
-
-    private let ansiReset = "\u{001B}[0m"
 
     /// Renders a tree or subtree.
     ///
@@ -85,7 +76,12 @@ struct TreeRenderer {
     /// separately by `show` and is not represented by a real tree entry.
     private func rootRow(label: String, entry: TreeEntry?, path: String, config: TreedocsConfig, statusOverrides: [String: EntryStatus]) -> RenderRow {
         let status = statusOverrides[path] ?? entry.map { entryStatus(for: $0, config: config) } ?? EntryStatus.clean
-        let decorated = decorate(label: styled(label: label, status: status), entry: entry)
+        let styledLabel = switch status {
+        case .clean: label.green.bold
+        case .warning: label.yellow.bold
+        case .error: label.red.bold
+        }
+        let decorated = decorate(label: styledLabel, entry: entry)
         let plain = decorate(label: label, entry: entry)
         return RenderRow(label: decorated, visibleLabelLength: plain.count, description: entry.map { descriptionText(for: $0, config: config) } ?? nil)
     }
@@ -118,7 +114,12 @@ struct TreeRenderer {
             let path = pathPrefix.isEmpty ? key : pathPrefix + "/" + key
             let marker = entry.isDirectory ? "\(key)/" : key
             let status = statusOverrides[path] ?? entryStatus(for: entry, config: config)
-            let decorated = decorate(label: styled(label: marker, status: status), entry: entry)
+            let styledLabel = switch status {
+            case .clean: marker.green.bold
+            case .warning: marker.yellow.bold
+            case .error: marker.red.bold
+            }
+            let decorated = decorate(label: styledLabel, entry: entry)
             let plain = decorate(label: marker, entry: entry)
             lines.append(RenderRow(
                 label: prefix + connector + decorated,
@@ -169,11 +170,6 @@ struct TreeRenderer {
         }
 
         return config.resolvedCheckSeverity == .warn ? .warning : .error
-    }
-
-    /// Applies ANSI bold color styling to a path label.
-    private func styled(label: String, status: EntryStatus) -> String {
-        status.ansiCode + label + ansiReset
     }
 
     /// Formats description text for display.

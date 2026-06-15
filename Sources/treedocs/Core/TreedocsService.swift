@@ -1,5 +1,6 @@
 import Foundation
 import PathKit
+import Rainbow
 
 /// Summarizes validation results for a repository's stored tree documentation.
 ///
@@ -367,7 +368,7 @@ struct TreedocsService {
             let report = try check(at: rootPath)
             if report.hasIssues {
                 let subtreeHasIssues = hasScopedIssues(in: report, subtreePath: normalizedPath)
-                lines.append(scopedDiscrepancyMessage(subtreePath: normalizedPath, subtreeHasIssues: subtreeHasIssues, tree: file.tree))
+                lines.append(scopedDiscrepancyText(subtreePath: normalizedPath, subtreeHasIssues: subtreeHasIssues, tree: file.tree).yellow.bold)
 
                 if report.hasSignatureDrift {
                     let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
@@ -378,7 +379,7 @@ struct TreedocsService {
                     }
                 }
             } else {
-                lines.append(green("✅ The treedocs below is up to date with the filesystem."))
+                lines.append("✅ The treedocs below is up to date with the filesystem.".green)
             }
         }
 
@@ -399,20 +400,13 @@ struct TreedocsService {
         return lines.joined(separator: "\n")
     }
 
-    private func green(_ message: String) -> String {
-        "\u{001B}[32m\(message)\u{001B}[0m"
-    }
-
-    private func scopedDiscrepancyMessage(subtreePath: String, subtreeHasIssues: Bool, tree: [String: TreeEntry]) -> String {
-        let message: String
+    private func scopedDiscrepancyText(subtreePath: String, subtreeHasIssues: Bool, tree: [String: TreeEntry]) -> String {
         if subtreePath.isEmpty {
-            message = "Warning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report."
+            return "Warning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report."
         } else if subtreeHasIssues {
-            message = "Warning: this subtree has treedocs discrepancies. Run `treedocs check` for the full diagnostic report."
-        } else {
-            message = "Note: treedocs has drift elsewhere in this repo; `\(displayFocusedPath(subtreePath, in: tree))` is current. Run `treedocs check` or `treedocs sync`."
+            return "Warning: this subtree has treedocs discrepancies. Run `treedocs check` for the full diagnostic report."
         }
-        return "\u{001B}[1;33m" + message + "\u{001B}[0m"
+        return "Note: treedocs has drift elsewhere in this repo; `\(displayFocusedPath(subtreePath, in: tree))` is current. Run `treedocs check` or `treedocs sync`."
     }
 
     private func hasScopedIssues(in report: CheckReport, subtreePath: String) -> Bool {

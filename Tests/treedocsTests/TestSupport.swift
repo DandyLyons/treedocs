@@ -1,5 +1,6 @@
 import Foundation
 import PathKit
+@preconcurrency import Rainbow
 @testable import treedocs
 
 final class TestWorkspace {
@@ -63,4 +64,16 @@ final class StubMissingDescriptionCollector: MissingDescriptionCollector {
         requestedPaths = paths
         return result
     }
+}
+
+func withRainbowConsoleOutput<T>(_ operation: () throws -> T) rethrows -> T {
+    let previousEnabled = Rainbow.enabled
+    let previousOutputTarget = Rainbow.outputTarget
+    Rainbow.enabled = true
+    Rainbow.outputTarget = .console
+    defer {
+        Rainbow.enabled = previousEnabled
+        Rainbow.outputTarget = previousOutputTarget
+    }
+    return try operation()
 }

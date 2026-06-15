@@ -39,6 +39,11 @@ swift run treedocs sync -n
 
 Non-TTY contexts, such as CI and redirected input/output, skip interactive UI automatically.
 
+## Color Output
+`treedocs` uses Rainbow for ANSI-styled terminal output. Rainbow enables colors for supported TTY output and returns plain text for unknown output targets, such as most redirected output.
+
+Rainbow also respects standard color environment controls: set `NO_COLOR` to disable color output, or `FORCE_COLOR` to force color output. `treedocs` does not currently provide a dedicated `--no-color` flag.
+
 ## treedocs.yaml Shape
 `treedocs.yaml` contains:
 - `project`: metadata such as `name`, `version`, and `last_updated`
