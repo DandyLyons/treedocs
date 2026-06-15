@@ -71,6 +71,17 @@ struct SchemaAndConfigTests {
     }
 
     @Test
+    func `Validator uses bundled schema instead of repository schema file`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        try workspace.writeFile("DOCS/treedocs.schema.json", contents: "not json")
+
+        try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
+    }
+
+    @Test
     func `Round-trip through store preserves valid tree structure`() throws {
         let workspace = try TestWorkspace()
         let file = TreedocsFile(

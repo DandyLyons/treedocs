@@ -8,20 +8,20 @@ struct TreedocsSchemaValidator {
     /// Reads and validates YAML from disk.
     ///
     /// - Parameter path: The `treedocs.yaml` path to validate.
-    /// - Throws: `TreeDocsError` when the file cannot be decoded, the schema cannot be found, or validation fails.
+    /// - Throws: `TreeDocsError` when the file cannot be decoded or validation fails.
     func validateFile(at path: Path) throws {
         let data = try path.read()
         guard let yaml = String(data: data, encoding: .utf8) else {
             throw TreeDocsError.message("Failed to decode treedocs.yaml at \(path.string) as UTF-8.")
         }
-        try validate(yaml: yaml, schemaPath: schemaPath(for: path.parent()))
+        try validate(yaml: yaml)
     }
 
     /// Validates YAML text against the canonical schema.
     ///
     /// - Parameters:
     ///   - yaml: YAML document text.
-    ///   - schemaPath: Optional explicit schema path. When omitted, the validator searches upward from the current directory.
+    ///   - schemaPath: Optional explicit schema path for tests or tooling. When omitted, the bundled schema is used.
     /// - Throws: `TreeDocsError` when YAML is structurally invalid or fails schema validation.
     func validate(yaml: String, schemaPath: Path? = nil) throws {
         guard let parsed = try Yams.load(yaml: yaml) else {
@@ -42,31 +42,18 @@ struct TreedocsSchemaValidator {
             return try readUTF8(explicitPath)
         }
 
-        if let discovered = discoverSchemaPath(), discovered.exists {
-            return try readUTF8(discovered)
+        return try bundledSchemaJSON()
+    }
+
+    private func bundledSchemaJSON() throws -> String {
+        guard let url = Bundle.module.url(forResource: "treedocs.schema", withExtension: "json") else {
+            throw TreeDocsError.message("Unable to find bundled canonical schema treedocs.schema.json.")
         }
 
-        throw TreeDocsError.message("Unable to find canonical schema at DOCS/treedocs.schema.json.")
-    }
-
-    private func schemaPath(for root: Path) -> Path? {
-        let candidate = root + Path("DOCS/treedocs.schema.json")
-        return candidate.exists ? candidate : nil
-    }
-
-    private func discoverSchemaPath() -> Path? {
-        var current = Path(FileManager.default.currentDirectoryPath).absolute()
-        while true {
-            let candidate = current + Path("DOCS/treedocs.schema.json")
-            if candidate.exists {
-                return candidate
-            }
-
-            let parent = current.parent()
-            if parent == current {
-                return nil
-            }
-            current = parent
+        do {
+            return try String(contentsOf: url, encoding: .utf8)
+        } catch {
+            throw TreeDocsError.message("Failed to read bundled canonical schema treedocs.schema.json: \(error.localizedDescription)")
         }
     }
 

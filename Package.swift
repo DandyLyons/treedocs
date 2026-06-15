@@ -25,6 +25,9 @@ let package = Package(
                 .product(name: "JSONSchema", package: "swift-json-schema"),
                 .product(name: "Noora", package: "Noora"),
                 .product(name: "Rainbow", package: "Rainbow"),
+            ],
+            resources: [
+                .copy("../../DOCS/treedocs.schema.json"),
             ]
         ),
         .testTarget(
