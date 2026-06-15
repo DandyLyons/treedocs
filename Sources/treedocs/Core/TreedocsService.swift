@@ -317,25 +317,39 @@ struct TreedocsService {
     /// - Throws: Any error thrown by checking or rendering the requested tree.
     func show(at rootPath: String, path: String, checkFirst: Bool) throws -> String {
         var lines: [String] = []
-        if checkFirst {
-            let report = try check(at: rootPath)
-            if report.hasIssues {
-                lines.append("Warning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report.")
-            }
-        }
-
+        var displayTree: [String: TreeEntry]?
+        var statusOverrides: [String: TreeRenderer.EntryStatus] = [:]
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
         let file = try store.load(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: file.overrides)
         let normalizedPath = RelativePath.normalize(path)
 
+        if checkFirst {
+            let report = try check(at: rootPath)
+            if report.hasIssues {
+                let subtreeHasIssues = hasScopedIssues(in: report, subtreePath: normalizedPath)
+                lines.append(scopedDiscrepancyMessage(subtreePath: normalizedPath, subtreeHasIssues: subtreeHasIssues, tree: file.tree))
+
+                if report.hasSignatureDrift {
+                    let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+                    displayTree = TreeOperations.mergePreservingMetadata(scanned: scan.tree, existing: file.tree)
+                    let status = report.severity == .warn ? TreeRenderer.EntryStatus.warning : .error
+                    for path in report.missingPaths where isPath(path, inside: normalizedPath) {
+                        statusOverrides[path] = status
+                    }
+                }
+            }
+        }
+
+        let tree = displayTree ?? file.tree
+
         switch linkResolver.resolve(path: normalizedPath, in: file.tree) {
         case .none:
-            lines.append(try renderer.render(tree: file.tree, subtreePath: path, config: loaded.config))
+            lines.append(try renderer.render(tree: tree, subtreePath: path, config: loaded.config, statusOverrides: statusOverrides))
         case let .external(url):
             lines.append("External alias: \(displayPath(normalizedPath)) -> \(url)")
         case let .resolved(resolvedPath, _, _):
-            lines.append(try renderer.render(tree: file.tree, subtreePath: resolvedPath, config: loaded.config))
+            lines.append(try renderer.render(tree: tree, subtreePath: resolvedPath, config: loaded.config, statusOverrides: statusOverrides))
         case let .broken(target, chain):
             throw TreeDocsError.message("Broken link: \(chain.joined(separator: " -> ")) (missing target: \(target))")
         case let .cycle(chain):
@@ -344,8 +358,44 @@ struct TreedocsService {
         return lines.joined(separator: "\n")
     }
 
+    private func scopedDiscrepancyMessage(subtreePath: String, subtreeHasIssues: Bool, tree: [String: TreeEntry]) -> String {
+        let message: String
+        if subtreePath.isEmpty {
+            message = "Warning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report."
+        } else if subtreeHasIssues {
+            message = "Warning: this subtree has treedocs discrepancies. Run `treedocs check` for the full diagnostic report."
+        } else {
+            message = "Note: treedocs has drift elsewhere in this repo; `\(displayFocusedPath(subtreePath, in: tree))` is current. Run `treedocs check` or `treedocs sync`."
+        }
+        return "\u{001B}[1;33m" + message + "\u{001B}[0m"
+    }
+
+    private func hasScopedIssues(in report: CheckReport, subtreePath: String) -> Bool {
+        if subtreePath.isEmpty {
+            return report.hasIssues
+        }
+
+        let scopedPaths = report.missingDescriptions
+            + report.missingPaths
+            + report.extraPaths
+            + report.changedPaths
+            + report.shadowedPaths
+        return scopedPaths.contains { isPath($0, inside: subtreePath) }
+    }
+
+    private func isPath(_ path: String, inside subtreePath: String) -> Bool {
+        subtreePath.isEmpty || path == subtreePath || path.hasPrefix(subtreePath + "/")
+    }
+
     private func displayPath(_ path: String) -> String {
         path.isEmpty ? "." : path
+    }
+
+    private func displayFocusedPath(_ path: String, in tree: [String: TreeEntry]) -> String {
+        guard TreeOperations.entry(at: path, in: tree)?.isDirectory == true else {
+            return displayPath(path)
+        }
+        return displayPath(path) + "/"
     }
 
     /// Finds treedocs configuration and state files beneath a repository path.

@@ -280,6 +280,38 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Show colors discrepancy warning and renders missing filesystem entries by severity`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: "Project readme",
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+
+        try workspace.writeFile("foo/bar.txt", contents: "new")
+
+        let errorOutput = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
+        #expect(errorOutput.contains("\u{001B}[1;33mWarning: treedocs discrepancies found. Run `treedocs check` for the full diagnostic report.\u{001B}[0m"))
+        #expect(errorOutput.contains("\u{001B}[1;31mfoo/\u{001B}[0m"))
+        #expect(errorOutput.contains("└── \u{001B}[1;31mbar.txt\u{001B}[0m"))
+
+        var state = try workspace.loadState()
+        state.overrides = TreedocsConfig(checkSeverity: .warn)
+        try workspace.saveState(state)
+
+        let warningOutput = try service.show(at: workspace.root.string, path: ".", checkFirst: true)
+        #expect(warningOutput.contains("\u{001B}[1;33mfoo/\u{001B}[0m"))
+        #expect(warningOutput.contains("└── \u{001B}[1;33mbar.txt\u{001B}[0m"))
+    }
+
+    @Test
     func `Show reports broken links and link cycles`() throws {
         let workspace = try TestWorkspace()
         try workspace.saveState(
@@ -501,12 +533,48 @@ struct WorkflowTests {
         try workspace.writeFile("Sources/New.swift", contents: "print(\"new\")")
 
         let checkedOutput = try service.show(at: workspace.root.string, path: "Sources", checkFirst: true)
-        #expect(checkedOutput.contains("Warning: treedocs discrepancies found"))
+        #expect(checkedOutput.contains("Warning: this subtree has treedocs discrepancies"))
         #expect(checkedOutput.contains("App.swift"))
+        #expect(checkedOutput.contains("\u{001B}[1;31mNew.swift\u{001B}[0m"))
 
         let uncheckedOutput = try service.show(at: workspace.root.string, path: "Sources", checkFirst: false)
-        #expect(!uncheckedOutput.contains("Warning: treedocs discrepancies found"))
+        #expect(!uncheckedOutput.contains("treedocs discrepancies"))
         #expect(uncheckedOutput.contains("App.swift"))
+    }
+
+    @Test
+    func `Show notes broader repo drift when requested subtree is current`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "Sources",
+            description: "Source files",
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "Sources/App.swift",
+            description: "App entry point",
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+
+        try workspace.writeFile("foo/bar.txt", contents: "new")
+
+        let output = try service.show(at: workspace.root.string, path: "Sources", checkFirst: true)
+        #expect(output.contains("Note: treedocs has drift elsewhere in this repo; `Sources/` is current. Run `treedocs check` or `treedocs sync`."))
+        #expect(!output.contains("Warning: treedocs discrepancies found"))
+        #expect(!output.contains("Warning: this subtree has treedocs discrepancies"))
+        #expect(!output.contains("foo/"))
+        #expect(output.contains("App.swift"))
     }
 
     @Test

@@ -26,6 +26,10 @@ swift test --filter "IgnoreMatcher"
 ## GitHub
 - Use the `DandyLyons` GitHub account for this repository before running `gh` commands: `gh auth switch --user DandyLyons`
 
+## Codebase Exploration
+- When you need to explore or understand the codebase, run `swift run treedocs` first. It immediately generates a tree explanation of the repository's files and folders.
+  - Tip: Use `swift run treedocs <path>` to focus on a specific subtree
+
 ## Architecture
 - Executable entry point: `Sources/treedocs/TreeDocs.swift`
 - CLI commands live in `Sources/treedocs/Commands/`

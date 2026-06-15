@@ -12,7 +12,7 @@ struct TreeRenderer {
         var description: String?
     }
 
-    private enum EntryStatus {
+    enum EntryStatus {
         case clean
         case warning
         case error
@@ -39,7 +39,12 @@ struct TreeRenderer {
     ///   - config: Display configuration controlling indentation, alignment, and description length.
     /// - Returns: A newline-separated textual representation of the requested tree.
     /// - Throws: `TreeDocsError` when `subtreePath` does not exist in `tree`.
-    func render(tree: [String: TreeEntry], subtreePath: String?, config: TreedocsConfig) throws -> String {
+    func render(
+        tree: [String: TreeEntry],
+        subtreePath: String?,
+        config: TreedocsConfig,
+        statusOverrides: [String: EntryStatus] = [:]
+    ) throws -> String {
         let rootLabel: String
         let rootEntry: TreeEntry?
         let renderedTree: [String: TreeEntry]
@@ -58,8 +63,9 @@ struct TreeRenderer {
             renderedTree = tree
         }
 
-        var flattened = [rootRow(label: rootLabel, entry: rootEntry, config: config)]
-        flattened.append(contentsOf: flattenForRender(tree: renderedTree, prefix: "", config: config))
+        let rootPath = subtreePath.map(RelativePath.normalize) ?? ""
+        var flattened = [rootRow(label: rootLabel, entry: rootEntry, path: rootPath, config: config, statusOverrides: statusOverrides)]
+        flattened.append(contentsOf: flattenForRender(tree: renderedTree, prefix: "", pathPrefix: rootPath, config: config, statusOverrides: statusOverrides))
 
         let labelWidth = config.resolvedAlignColumns ? flattened.map(\.visibleLabelLength).max() ?? 0 : 0
         let rendered = flattened.map { item in
@@ -77,8 +83,8 @@ struct TreeRenderer {
     ///
     /// The synthetic `.` root is always shown as clean because repository-wide drift is reported
     /// separately by `show` and is not represented by a real tree entry.
-    private func rootRow(label: String, entry: TreeEntry?, config: TreedocsConfig) -> RenderRow {
-        let status = entry.map { entryStatus(for: $0, config: config) } ?? EntryStatus.clean
+    private func rootRow(label: String, entry: TreeEntry?, path: String, config: TreedocsConfig, statusOverrides: [String: EntryStatus]) -> RenderRow {
+        let status = statusOverrides[path] ?? entry.map { entryStatus(for: $0, config: config) } ?? EntryStatus.clean
         let decorated = decorate(label: styled(label: label, status: status), entry: entry)
         let plain = decorate(label: label, entry: entry)
         return RenderRow(label: decorated, visibleLabelLength: plain.count, description: entry.map { descriptionText(for: $0, config: config) } ?? nil)
@@ -94,7 +100,13 @@ struct TreeRenderer {
     ///   - prefix: The visible tree prefix made from ancestor connectors.
     ///   - config: Display configuration for indentation and description length.
     /// - Returns: Ordered render rows containing labels and optional descriptions.
-    private func flattenForRender(tree: [String: TreeEntry], prefix: String, config: TreedocsConfig) -> [RenderRow] {
+    private func flattenForRender(
+        tree: [String: TreeEntry],
+        prefix: String,
+        pathPrefix: String,
+        config: TreedocsConfig,
+        statusOverrides: [String: EntryStatus]
+    ) -> [RenderRow] {
         var lines: [RenderRow] = []
         let keys = tree.keys.sorted()
 
@@ -103,8 +115,9 @@ struct TreeRenderer {
             let isLast = index == keys.count - 1
             let connector = isLast ? "└── " : "├── "
             let childPrefix = prefix + (isLast ? "    " : "│   ")
+            let path = pathPrefix.isEmpty ? key : pathPrefix + "/" + key
             let marker = entry.isDirectory ? "\(key)/" : key
-            let status = entryStatus(for: entry, config: config)
+            let status = statusOverrides[path] ?? entryStatus(for: entry, config: config)
             let decorated = decorate(label: styled(label: marker, status: status), entry: entry)
             let plain = decorate(label: marker, entry: entry)
             lines.append(RenderRow(
@@ -113,7 +126,13 @@ struct TreeRenderer {
                 description: descriptionText(for: entry, config: config)
             ))
             if entry.isDirectory {
-                lines.append(contentsOf: flattenForRender(tree: entry.children, prefix: childPrefix, config: config))
+                lines.append(contentsOf: flattenForRender(
+                    tree: entry.children,
+                    prefix: childPrefix,
+                    pathPrefix: path,
+                    config: config,
+                    statusOverrides: statusOverrides
+                ))
             }
         }
 
