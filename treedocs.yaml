@@ -2,7 +2,7 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:5584e91a6c08e86f002c58e18c4ed0a0aaf9c691ec795cb1d7eb723d1340ec2f
+signature: sha256:d75f002ac2e0c3c30ccb7c1f641de22af2195861ab86dfbec93e908d65080d70
 tree:
   .github:
     _doc: GitHub repository automation and workflow configuration.
@@ -17,6 +17,9 @@ tree:
     launch.json: Debug launch configurations for running treedocs from VS Code.
   AGENTS.md: Project instructions and operating notes for AI coding agents.
   DOCS:
+    Feature Idea - treedocs Git History.md: Brainstorming new features that we could
+      add if treedocs inspected the git history and compared it to the treedocs.yaml
+      over time.
     InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
     _doc: Supplemental project documentation and schema assets.
     schema-cli-usage.md: An overview of the current treedocs JSONSchmea and what schema
