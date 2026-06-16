@@ -2,8 +2,13 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:1197c781f8ff87913d92925716d2209f167ab623f6e9ca566a50a3dfa628c788
+signature: sha256:5584e91a6c08e86f002c58e18c4ed0a0aaf9c691ec795cb1d7eb723d1340ec2f
 tree:
+  .github:
+    _doc: GitHub repository automation and workflow configuration.
+    workflows:
+      _doc: GitHub Actions workflow definitions.
+      pages.yml: Deploys the static site in site/ to GitHub Pages using Actions.
   .gitignore: Files and build artifacts ignored by Git.
   .spi.yml: Swift Package Index configuration for package documentation and compatibility
     metadata.
@@ -104,4 +109,8 @@ tree:
       _doc: Suggested Git hook scripts that users can opt into installing.
       pre-commit: Suggested non-interactive Git pre-commit hook for syncing and checking
         treedocs.yaml.
+  site:
+    _doc: Static files deployed to the project GitHub Pages site.
+    index.html: Landing page for the treedocs GitHub Pages site.
+    styles.css: Stylesheet for the treedocs GitHub Pages landing page.
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.

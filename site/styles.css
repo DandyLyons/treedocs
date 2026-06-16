@@ -1,0 +1,158 @@
+:root {
+  color-scheme: light dark;
+  --bg: #101418;
+  --panel: #182027;
+  --text: #eef4f8;
+  --muted: #adbbc6;
+  --accent: #80d8ff;
+  --accent-strong: #b9f6ca;
+  --border: #2b3843;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(128, 216, 255, 0.18), transparent 34rem),
+    linear-gradient(135deg, #101418 0%, #17212b 54%, #111817 100%);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.shell {
+  width: min(68rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 5rem 0;
+}
+
+.hero {
+  max-width: 48rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(4rem, 14vw, 9rem);
+  line-height: 0.9;
+  letter-spacing: -0.08em;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+}
+
+p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.lede {
+  margin: 1.5rem 0 0;
+  max-width: 38rem;
+  font-size: clamp(1.2rem, 3vw, 1.75rem);
+}
+
+code {
+  color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 2rem;
+}
+
+a {
+  color: var(--text);
+}
+
+.actions a {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.85rem 1.1rem;
+  background: rgba(24, 32, 39, 0.78);
+  text-decoration: none;
+}
+
+.actions a:hover,
+.actions a:focus-visible {
+  border-color: var(--accent);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 4rem;
+}
+
+article,
+.example,
+.quickstart {
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(24, 32, 39, 0.72);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.18);
+}
+
+article p {
+  margin-bottom: 0;
+}
+
+.quickstart {
+  margin-top: 1rem;
+}
+
+.example {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.75fr) minmax(0, 1.25fr);
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.example p {
+  margin-bottom: 0;
+}
+
+pre {
+  margin: 0;
+  overflow-x: auto;
+  color: var(--accent);
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.current {
+  color: var(--accent-strong);
+}
+
+.stale {
+  color: #ff8a80;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 3rem 0;
+  }
+
+  .grid,
+  .example {
+    grid-template-columns: 1fr;
+  }
+}

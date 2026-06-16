@@ -130,6 +130,13 @@ When a child folder contains its own `treedocs.yaml`, that file owns documentati
 
 For example, if `Vendor/Plugin/treedocs.yaml` exists, the parent `treedocs.yaml` owns `Vendor/Plugin/` as a delegated directory entry while `Vendor/Plugin/treedocs.yaml` owns `Vendor/Plugin/Sources/` and other descendants.
 
+## GitHub Pages
+The project site is deployed to `https://dandylyons.github.io/treedocs/` from the static files in `site/`.
+
+GitHub Pages is published by the `Deploy GitHub Pages` workflow in `.github/workflows/pages.yml`. The workflow uses GitHub Actions deployment rather than branch or folder publishing, so Pages configuration and deployment behavior stay version controlled.
+
+Schema endpoints are intentionally not published by this workflow. They are tracked separately from the project site deployment.
+
 ## Development
 ```bash
 swift build

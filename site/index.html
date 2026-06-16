@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>treedocs</title>
+  <meta name="description" content="treedocs gives people and agents concise, version-controlled context for any codebase.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero" aria-labelledby="title">
+      <p class="eyebrow">Swift CLI</p>
+      <h1 id="title">treedocs</h1>
+      <p class="lede">Understand any codebase faster with a documented <code>tree</code> for every file and folder.</p>
+      <div class="actions" aria-label="Primary links">
+        <a href="https://github.com/DandyLyons/treedocs">GitHub Repository</a>
+        <a href="https://swiftpackageindex.com/DandyLyons/treedocs/documentation">Package Documentation</a>
+      </div>
+    </section>
+
+    <section class="example" aria-labelledby="example-title">
+      <div>
+        <h2 id="example-title">Readable Tree Output</h2>
+        <p>Just run <code>treedocs</code> to see the repository at a glance. Current files render green, while stale or invalid entries render red so problems stand out immediately.</p>
+      </div>
+      <pre><code><span class="current">✅ The treedocs below is up to date with the filesystem.</span>
+.
+├── <span class="current">README.md</span>  User-facing overview, installation, and command usage documentation.
+├── <span class="current">Sources/</span>  Swift package source code for the treedocs executable.
+│   └── <span class="current">treedocs/</span>  Main treedocs executable target.
+│       ├── <span class="current">Commands/</span>  ArgumentParser command implementations for treedocs subcommands.
+│       └── <span class="current">Core/</span>  Core services for loading, scanning, rendering, and updating treedocs data.
+├── <span class="current">site/</span>  Static files deployed to the project GitHub Pages site.
+│   ├── <span class="current">index.html</span>  Landing page for the treedocs GitHub Pages site.
+│   └── <span class="current">styles.css</span>  Stylesheet for the treedocs GitHub Pages landing page.
+└── <span class="stale">old-file.swift</span>  Stale entry: no matching path exists on disk.</code></pre>
+    </section>
+
+    <section class="grid" aria-label="Project highlights">
+      <article>
+        <h2>Acclimate Faster</h2>
+        <p>Give new teammates, future you, and coding agents the concise context they need to understand complex repositories so that they don't need to wander aimlessly.</p>
+      </article>
+      <article>
+        <h2>Stay Current</h2>
+        <p>Keep documentation from going stale with automatic drift checks that warn or fail. You can even install a Git pre-commit hook so that you never commit undocummented changes.</p>
+      </article>
+      <article>
+        <h2>Review With Context</h2>
+        <p>Store simple, human-readable, version-controlled summaries in <code>treedocs.yaml</code> so reviews are easier and agents spend fewer tokens rediscovering project structure.</p>
+      </article>
+    </section>
+
+    <section class="quickstart" aria-labelledby="quickstart-title">
+      <h2 id="quickstart-title">Quick Start</h2>
+      <pre><code class="language-bash">treedocs init   # Create a treedocs.yaml file
+treedocs sync   # Synchronize treedocs.yaml with your current folder structure and check for errors.
+treedocs show . # Show the documented tree
+treedocs check  # Check for errors in treedocs.yaml.</code></pre>
+    </section>
+  </main>
+</body>
+</html>
