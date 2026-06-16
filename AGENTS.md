@@ -15,8 +15,10 @@
 ## Commands
 ```bash
 swift build
-swift run treedocs --help
-swift run treedocs init --help
+swift run treedocs --help # shows root command help
+swift run treedocs init # initializes treedocs.yaml
+swift run treedocs sync # syncs treedocs.yaml with filesystem changes
+swift run treedocs show . # shows the documentation tree for the current directory
 swift test
 swift test --filter "Workflow"
 swift test --filter "Schema and Config"
@@ -29,7 +31,7 @@ swift test --filter "IgnoreMatcher"
 
 ## Codebase Exploration
 - When you need to explore or understand the codebase, run `swift run treedocs` first. It immediately generates a tree explanation of the repository's files and folders.
-  - Tip: Use `swift run treedocs <path>` to focus on a specific subtree
+  - Tip: Use `swift run treedocs show <path>` to focus on a specific subtree
 
 ## Architecture
 - Executable entry point: `Sources/treedocs/TreeDocs.swift`
@@ -43,6 +45,7 @@ swift test --filter "IgnoreMatcher"
 - Shared repository option: `-p, --path <path>`
 - Shared interactive opt-out: `--non-interactive`
 - `init` writes `treedocs.yaml` with project metadata, signature, and empty descriptions
+- `show` renders the documentation tree for a given path, defaulting to the current directory
 - `sync` preserves existing metadata while reconciling filesystem changes
 - `check` reports signature drift and missing descriptions, and respects configured severity
 - `inspect` resolves `_link` chains and can render a subtree recursively
