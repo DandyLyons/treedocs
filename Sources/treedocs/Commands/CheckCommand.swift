@@ -2,6 +2,9 @@ import ArgumentParser
 
 /// Implements the `treedocs check` command.
 struct CheckCommand: ParsableCommand {
+    /// Guidance printed when documented entries do not yet have descriptions.
+    static let missingDescriptionNextStep = "Add missing descriptions with `treedocs update <path> --description \"...\"`, edit `treedocs.yaml` directly, or `treedocs sync` in interactive mode."
+
     /// Command metadata for non-mutating drift checks.
     static let configuration = CommandConfiguration(
         commandName: "check",
@@ -52,7 +55,7 @@ struct CheckCommand: ParsableCommand {
             steps.append("Nested `treedocs.yaml` files own their descendants; `treedocs sync` keeps only delegated boundary folders in the parent tree.")
         }
         if !report.missingDescriptions.isEmpty {
-            steps.append("Add missing descriptions with `treedocs update <path> --description \"...\"`, or edit `treedocs.yaml` directly.")
+            steps.append(Self.missingDescriptionNextStep)
         }
 
         return steps

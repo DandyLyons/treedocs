@@ -2,7 +2,7 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:d80e4299d71a7a2ecc75fe79760eb0563d73e6359192cc0fb2e9a4864d18e148
+signature: sha256:9402f89d8d7a03abdcccd57727e81f9d69a4ab2e09805e0dac1271d3db5cd3a5
 tree:
   .gitignore: Files and build artifacts ignored by Git.
   .spi.yml: Swift Package Index configuration for package documentation and compatibility
@@ -98,4 +98,6 @@ tree:
       TestSupport.swift: Shared temporary workspace helpers for treedocs tests.
       WorkflowTests.swift: End-to-end command workflow tests covering common CLI usage.
       _doc: Unit and workflow tests for the treedocs package.
+  foo:
+    _doc: ''
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.

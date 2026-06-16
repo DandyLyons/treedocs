@@ -224,6 +224,28 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Non-interactive sync reports remaining missing descriptions`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        let result = try service.syncResult(at: workspace.root.string, interactive: false)
+
+        #expect(result.saved)
+        #expect(result.missingDescriptions == ["README.md", "Sources", "Sources/App.swift"])
+        #expect(SyncCommand.remainingIssueMessages(missingDescriptions: result.missingDescriptions) == [
+            "Missing descriptions:",
+            "- README.md",
+            "- Sources",
+            "- Sources/App.swift",
+            "Next steps:",
+            "- \(CheckCommand.missingDescriptionNextStep)",
+        ])
+    }
+
+    @Test
     func `Check reports clean and stale trees with severity-aware failure behavior`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()

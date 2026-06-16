@@ -85,6 +85,9 @@ struct SyncResult {
 
     /// Whether `treedocs.yaml` was written.
     var saved: Bool
+
+    /// Relative paths for entries that still need descriptions after sync handling.
+    var missingDescriptions: [String]
 }
 
 /// Coordinates repository scanning, state storage, rendering, and tree mutations.
@@ -183,13 +186,13 @@ struct TreedocsService {
                 case let .save(descriptions):
                     TreeOperations.applyDescriptions(descriptions, to: &merged.tree)
                 case .cancel:
-                    return SyncResult(file: current, saved: false)
+                    return SyncResult(file: current, saved: false, missingDescriptions: TreeOperations.missingDescriptionPaths(in: current.tree))
                 }
             }
         }
 
         try store.save(merged, at: repositoryPaths.stateFile)
-        return SyncResult(file: merged, saved: true)
+        return SyncResult(file: merged, saved: true, missingDescriptions: TreeOperations.missingDescriptionPaths(in: merged.tree))
     }
 
     private func missingDescriptionCandidates(in tree: [String: TreeEntry]) throws -> [MissingDescriptionCandidate] {

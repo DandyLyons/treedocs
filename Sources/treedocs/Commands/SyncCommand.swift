@@ -28,6 +28,7 @@ struct SyncCommand: ParsableCommand {
         )
         if result.saved {
             print("Synced treedocs.yaml (\(result.file.signature ?? "no signature"))")
+            Self.printRemainingIssues(missingDescriptions: result.missingDescriptions)
         } else {
             print("Sync cancelled; no changes saved.")
         }
@@ -35,5 +36,19 @@ struct SyncCommand: ParsableCommand {
 
     static func shouldRunInteractively(nonInteractive: Bool, stdinIsTTY: Bool, stdoutIsTTY: Bool) -> Bool {
         !nonInteractive && stdinIsTTY && stdoutIsTTY
+    }
+
+    static func remainingIssueMessages(missingDescriptions: [String]) -> [String] {
+        guard !missingDescriptions.isEmpty else { return [] }
+
+        return ["Missing descriptions:"]
+            + missingDescriptions.sorted().map { "- \($0)" }
+            + ["Next steps:", "- \(CheckCommand.missingDescriptionNextStep)"]
+    }
+
+    private static func printRemainingIssues(missingDescriptions: [String]) {
+        for message in remainingIssueMessages(missingDescriptions: missingDescriptions) {
+            print(message)
+        }
     }
 }
