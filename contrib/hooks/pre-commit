@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# This example script can be installed as a Git pre-commit hook to automatically 
+# sync treedocs.yaml with filesystem changes and check for drift before each commit.
+
+set -eu
+
+TREEDOCS_BIN="${TREEDOCS_BIN:-treedocs}"
+
+"$TREEDOCS_BIN" sync --non-interactive
+
+if ! git diff --quiet -- treedocs.yaml; then
+  printf '%s\n' "treedocs: treedocs.yaml has unstaged changes after sync."
+  printf '%s\n' "Review and stage it, then commit again:"
+  printf '%s\n' "  git add treedocs.yaml"
+  exit 1
+fi

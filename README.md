@@ -39,6 +39,36 @@ swift run treedocs sync -n
 
 Non-TTY contexts, such as CI and redirected input/output, skip interactive UI automatically.
 
+## Git Commit Hook
+`treedocs` can run from a Git `pre-commit` hook so commits stop when `treedocs.yaml` is stale or incomplete. This repository vends a suggested hook at `contrib/hooks/pre-commit`; users are responsible for reviewing and installing it in their own repositories.
+
+Install the suggested hook for the current repository:
+
+```bash
+install -m 755 contrib/hooks/pre-commit .git/hooks/pre-commit
+```
+
+The hook runs:
+
+```bash
+treedocs sync --non-interactive
+```
+
+`treedocs sync --non-interactive` reconciles fixable filesystem drift without opening terminal UI. If sync changes `treedocs.yaml`, the hook stops the commit so you can review and stage the updated state:
+
+```bash
+git add treedocs.yaml
+git commit
+```
+
+`treedocs sync` also reports remaining issues such as missing descriptions after reconciliation. Git hooks block commits when a command exits non-zero; treedocs validation commands use non-zero exits for blocking issues when `check_severity` resolves to `error`, which is the default.
+
+Set `TREEDOCS_BIN` if the executable is not available as `treedocs` on `PATH`:
+
+```bash
+TREEDOCS_BIN=/path/to/treedocs git commit
+```
+
 ## Color Output
 `treedocs` uses Rainbow for ANSI-styled terminal output. Rainbow enables colors for supported TTY output and returns plain text for unknown output targets, such as most redirected output.
 

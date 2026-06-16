@@ -305,7 +305,7 @@ struct WorkflowTests {
         #expect(report.hasIssues)
         #expect(report.shouldFail)
         #expect(CheckCommand.nextSteps(for: report).contains("Run `treedocs sync` to reconcile filesystem changes, refresh the stored signature, and repair generated schema state."))
-        #expect(CheckCommand.nextSteps(for: report).contains("Add missing descriptions with `treedocs update <path> --description \"...\"`, or edit `treedocs.yaml` directly."))
+        #expect(CheckCommand.nextSteps(for: report).contains("Add missing descriptions with `treedocs update <path> \"...\"`, edit `treedocs.yaml` directly, or `treedocs sync` in interactive mode."))
     }
 
     @Test
