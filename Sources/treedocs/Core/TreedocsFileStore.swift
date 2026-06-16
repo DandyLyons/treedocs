@@ -30,7 +30,7 @@ struct TreedocsFileStore {
 
     /// Saves a treedocs state file to disk.
     ///
-    /// The file is written atomically as UTF-8 YAML.
+    /// The file is written atomically as UTF-8 YAML and then validated against the canonical schema.
     ///
     /// - Parameters:
     ///   - file: The state model to serialize.
@@ -38,5 +38,6 @@ struct TreedocsFileStore {
     /// - Throws: YAML serialization or filesystem write errors.
     func save(_ file: TreedocsFile, at path: Path) throws {
         try file.toYAMLString().write(to: path.url, atomically: true, encoding: .utf8)
+        try validator.validateFile(at: path)
     }
 }

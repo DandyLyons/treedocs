@@ -109,6 +109,25 @@ struct SchemaAndConfigTests {
     }
 
     @Test
+    func `Store validates schema after saving`() throws {
+        let workspace = try TestWorkspace()
+        let file = TreedocsFile(
+            project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+            signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            tree: [
+                "README.md": TreeEntry(description: "Project readme", references: ["http://example.com"])
+            ]
+        )
+
+        do {
+            try workspace.saveState(file)
+            Issue.record("Expected save to reject schema-invalid references")
+        } catch {
+            #expect(error.localizedDescription.contains("#/tree/README.md/references/0"))
+        }
+    }
+
+    @Test
     func `Store rewrites do not preserve YAML comments but keep structured notes`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("treedocs.yaml", contents: """

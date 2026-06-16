@@ -269,9 +269,11 @@ struct WorkflowTests {
         try workspace.writeFile("Removed.swift", contents: "print(\"old\")")
         _ = try service.initialize(at: workspace.root.string, force: false)
 
-        var state = try workspace.loadState()
-        state.signature = "not-a-valid-signature"
-        try workspace.saveState(state)
+        let state = try workspace.loadState()
+        try workspace.writeFile("treedocs.yaml", contents: try state.toYAMLString().replacingOccurrences(
+            of: state.signature ?? "",
+            with: "not-a-valid-signature"
+        ))
         try workspace.remove("Removed.swift")
 
         let report = try service.check(at: workspace.root.string)
