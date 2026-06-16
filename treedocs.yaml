@@ -2,7 +2,7 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:b3f888c0096b7c2e0d73bc37ed7d11275287320427680b9d733f9913de6bd8ee
+signature: sha256:d80e4299d71a7a2ecc75fe79760eb0563d73e6359192cc0fb2e9a4864d18e148
 tree:
   .gitignore: Files and build artifacts ignored by Git.
   .spi.yml: Swift Package Index configuration for package documentation and compatibility
@@ -14,6 +14,8 @@ tree:
   DOCS:
     InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
     _doc: Supplemental project documentation and schema assets.
+    schema-cli-usage.md: An overview of the current treedocs JSONSchmea and what schema
+      features have been used and have not been used in the CLI features.
     treedocs.schema.json: JSON Schema describing the expected treedocs.yaml structure.
   LICENSE: MIT license terms for using, copying, modifying, and distributing treedocs.
   Package.resolved: Swift Package Manager dependency resolution lockfile for reproducible
