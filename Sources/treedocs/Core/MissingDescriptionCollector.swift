@@ -9,9 +9,9 @@ enum MissingDescriptionCollectionResult: Equatable {
 
 /// Collects descriptions for tree entries that still need documentation.
 protocol MissingDescriptionCollector {
-    /// Collect descriptions for the supplied missing-description paths.
+    /// Collect descriptions for the supplied missing-description candidates.
     ///
-    /// - Parameter paths: Relative tree paths that need descriptions.
+    /// - Parameter candidates: Relative tree paths that need descriptions, enriched with suggestions when available.
     /// - Returns: A save or cancel decision from the collection session.
-    func collectDescriptions(for paths: [String]) throws -> MissingDescriptionCollectionResult
+    func collectDescriptions(for candidates: [MissingDescriptionCandidate]) throws -> MissingDescriptionCollectionResult
 }

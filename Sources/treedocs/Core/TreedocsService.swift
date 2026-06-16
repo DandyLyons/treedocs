@@ -177,9 +177,9 @@ struct TreedocsService {
                 throw TreeDocsError.message("Interactive sync requires an interactive description collector.")
             }
 
-            let missingPaths = TreeOperations.missingDescriptionPaths(in: merged.tree)
-            if !missingPaths.isEmpty {
-                switch try missingDescriptionCollector.collectDescriptions(for: missingPaths) {
+            let missingCandidates = try missingDescriptionCandidates(in: merged.tree)
+            if !missingCandidates.isEmpty {
+                switch try missingDescriptionCollector.collectDescriptions(for: missingCandidates) {
                 case let .save(descriptions):
                     TreeOperations.applyDescriptions(descriptions, to: &merged.tree)
                 case .cancel:
@@ -190,6 +190,19 @@ struct TreedocsService {
 
         try store.save(merged, at: repositoryPaths.stateFile)
         return SyncResult(file: merged, saved: true)
+    }
+
+    private func missingDescriptionCandidates(in tree: [String: TreeEntry]) throws -> [MissingDescriptionCandidate] {
+        let catalog = try DescriptionSuggestionCatalog.bundled()
+        return TreeOperations.flatten(tree)
+            .filter { _, entry in entry.needsDescription }
+            .map { path, entry in
+                MissingDescriptionCandidate(
+                    path: path,
+                    isDirectory: entry.isDirectory,
+                    suggestedDescription: catalog.suggestion(for: path, isDirectory: entry.isDirectory)
+                )
+            }
     }
 
     /// Checks whether stored documentation is current.

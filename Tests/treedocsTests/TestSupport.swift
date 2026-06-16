@@ -54,14 +54,16 @@ final class TestWorkspace {
 
 final class StubMissingDescriptionCollector: MissingDescriptionCollector {
     let result: MissingDescriptionCollectionResult
+    private(set) var requestedCandidates: [MissingDescriptionCandidate] = []
     private(set) var requestedPaths: [String] = []
 
     init(result: MissingDescriptionCollectionResult) {
         self.result = result
     }
 
-    func collectDescriptions(for paths: [String]) throws -> MissingDescriptionCollectionResult {
-        requestedPaths = paths
+    func collectDescriptions(for candidates: [MissingDescriptionCandidate]) throws -> MissingDescriptionCollectionResult {
+        requestedCandidates = candidates
+        requestedPaths = candidates.map(\.path)
         return result
     }
 }

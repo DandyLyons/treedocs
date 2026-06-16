@@ -1,0 +1,173 @@
+paths:
+  .agents/: AI agent configuration, skills, and automation resources for this repository.
+  .agents/skills/: Reusable AI agent skills for project-specific workflows.
+  .claude/: Claude-specific project configuration, commands, rules, and agent instructions.
+  .github/: GitHub repository automation, issue templates, workflows, and project metadata.
+  .github/workflows/: GitHub Actions workflow definitions for CI and automation.
+  .gitlab/: GitLab project configuration and automation resources.
+  .vscode/: Visual Studio Code workspace settings, tasks, launch configs, or recommendations.
+  .idea/: JetBrains IDE project settings and workspace metadata.
+  .devcontainer/: Development container configuration for reproducible local environments.
+  .swiftpm/: Swift Package Manager workspace metadata and local package configuration.
+  .treedocs/: treedocs project configuration and ignore rules.
+  DOCS/: Project documentation, schemas, generated references, or supporting guides.
+  Sources/: Swift package source code.
+  Tests/: Swift package tests.
+  tmp/: Temporary files used during local development or tooling.
+files:
+  README.md: Project overview, setup instructions, and usage documentation.
+  README: Project overview, setup instructions, and usage documentation.
+  CHANGELOG.md: Release history and notable project changes.
+  HISTORY.md: Historical release notes and project changes.
+  LICENSE: Project license terms.
+  LICENSE.md: Project license terms.
+  COPYING: Project license and redistribution terms.
+  NOTICE: Third-party notices or attribution required by project dependencies.
+  CONTRIBUTING.md: Contribution guidelines for issues, pull requests, and development workflows.
+  CODE_OF_CONDUCT.md: Community standards and expected contributor behavior.
+  SECURITY.md: Security policy, vulnerability reporting instructions, and supported versions.
+  SUPPORT.md: Support channels and guidance for getting help with the project.
+  GOVERNANCE.md: Project governance model, maintainers, and decision-making process.
+  ROADMAP.md: Planned project direction, milestones, and future work.
+  AGENTS.md: Repository instructions for AI coding agents.
+  CLAUDE.md: Claude-specific project instructions and development guidance.
+  .gitignore: Git ignore rules for generated files, local settings, and build artifacts.
+  .gitattributes: Git attributes controlling path-specific behavior such as line endings and diff rules.
+  .gitmodules: Git submodule definitions and tracked dependency repositories.
+  .editorconfig: EditorConfig rules for consistent indentation, whitespace, and file formatting.
+  .env.example: Example environment variable values for local setup.
+  .env.sample: Sample environment variable values for local setup.
+  .env.schema: Schema describing required and optional environment variables.
+  .dockerignore: Docker ignore rules for excluding files from build contexts.
+  Dockerfile: Docker image build instructions for the project or service.
+  docker-compose.yml: Docker Compose service definitions for local development or deployment.
+  docker-compose.yaml: Docker Compose service definitions for local development or deployment.
+  compose.yml: Docker Compose service definitions for local development or deployment.
+  compose.yaml: Docker Compose service definitions for local development or deployment.
+  Makefile: Make targets for common development, build, test, or release tasks.
+  Justfile: Just command recipes for common development, build, test, or release tasks.
+  Taskfile.yml: Task runner definitions for common development workflows.
+  Taskfile.yaml: Task runner definitions for common development workflows.
+  package.json: Node package manifest defining scripts, dependencies, and project metadata.
+  package-lock.json: npm lockfile pinning exact dependency versions.
+  npm-shrinkwrap.json: npm shrinkwrap lockfile pinning dependency versions for publishing.
+  yarn.lock: Yarn lockfile pinning exact dependency versions.
+  pnpm-lock.yaml: pnpm lockfile pinning exact dependency versions.
+  bun.lock: Bun lockfile pinning exact dependency versions.
+  bun.lockb: Bun binary lockfile pinning exact dependency versions.
+  tsconfig.json: TypeScript compiler configuration.
+  jsconfig.json: JavaScript project configuration for editor tooling and path aliases.
+  vite.config.js: Vite build and development server configuration.
+  vite.config.ts: Vite build and development server configuration.
+  next.config.js: Next.js application configuration.
+  next.config.mjs: Next.js application configuration.
+  next.config.ts: Next.js application configuration.
+  tailwind.config.js: Tailwind CSS theme and content configuration.
+  tailwind.config.ts: Tailwind CSS theme and content configuration.
+  postcss.config.js: PostCSS plugin configuration.
+  eslint.config.js: ESLint flat configuration for JavaScript and TypeScript linting.
+  .eslintrc: ESLint configuration.
+  .eslintrc.json: ESLint configuration.
+  .prettierrc: Prettier formatting configuration.
+  .prettierrc.json: Prettier formatting configuration.
+  pyproject.toml: Python project metadata, build system, dependencies, and tool configuration.
+  requirements.txt: Python dependency requirements.
+  requirements-dev.txt: Python development and testing dependency requirements.
+  setup.py: Python package setup script.
+  setup.cfg: Python package metadata and tool configuration.
+  Pipfile: Pipenv dependency manifest.
+  Pipfile.lock: Pipenv lockfile pinning exact dependency versions.
+  poetry.lock: Poetry lockfile pinning exact Python dependency versions.
+  uv.lock: uv lockfile pinning exact Python dependency versions.
+  Cargo.toml: Rust package manifest defining dependencies, metadata, and build settings.
+  Cargo.lock: Rust lockfile pinning exact dependency versions.
+  go.mod: Go module definition and dependency requirements.
+  go.sum: Go dependency checksum lockfile.
+  pom.xml: Maven project configuration, dependencies, and build settings.
+  build.gradle: Gradle build configuration.
+  build.gradle.kts: Gradle Kotlin build configuration.
+  settings.gradle: Gradle project settings and included builds.
+  settings.gradle.kts: Gradle Kotlin project settings and included builds.
+  Gemfile: Ruby dependency manifest.
+  Gemfile.lock: Ruby Bundler lockfile pinning exact dependency versions.
+  composer.json: PHP Composer package manifest defining dependencies and scripts.
+  composer.lock: PHP Composer lockfile pinning exact dependency versions.
+  Package.swift: Swift Package Manager manifest defining targets, dependencies, and package metadata.
+  Package.resolved: Swift Package Manager lockfile pinning exact dependency versions.
+  Podfile: CocoaPods dependency manifest.
+  Podfile.lock: CocoaPods lockfile pinning exact dependency versions.
+  Cartfile: Carthage dependency manifest.
+  Cartfile.resolved: Carthage lockfile pinning exact dependency versions.
+  CMakeLists.txt: CMake build configuration for native targets.
+  meson.build: Meson build configuration.
+  conanfile.txt: Conan C and C++ dependency manifest.
+  conanfile.py: Conan C and C++ package recipe.
+  flake.nix: Nix flake defining reproducible packages, apps, or development shells.
+  flake.lock: Nix flake lockfile pinning exact inputs.
+  shell.nix: Nix shell definition for reproducible development environments.
+  default.nix: Nix package or environment definition.
+  renovate.json: Renovate dependency update configuration.
+  dependabot.yml: Dependabot dependency update configuration.
+  .gitlab-ci.yml: GitLab CI pipeline configuration.
+  azure-pipelines.yml: Azure Pipelines CI configuration.
+  bitbucket-pipelines.yml: Bitbucket Pipelines CI configuration.
+  appveyor.yml: AppVeyor CI configuration.
+  netlify.toml: Netlify build and deployment configuration.
+  vercel.json: Vercel deployment and routing configuration.
+  wrangler.toml: Cloudflare Workers project configuration.
+  firebase.json: Firebase project configuration for hosting, functions, or emulators.
+  treedocs.yaml: treedocs repository documentation state.
+  descriptions-suggestions.yaml: Default treedocs description suggestions catalog.
+directories:
+  src/: Source code for the project.
+  source/: Source code for the project.
+  sources/: Source code for the project.
+  lib/: Library source code or reusable implementation modules.
+  app/: Application source code and runtime entry points.
+  bin/: Executable scripts or command-line entry points.
+  cmd/: Command-line application entry points.
+  pkg/: Reusable package code intended for external use.
+  internal/: Private implementation code not intended for external use.
+  include/: Public header files or include files for native code.
+  tests/: Automated tests for the project.
+  test/: Automated tests for the project.
+  spec/: Specification-style tests for the project.
+  specs/: Specification-style tests for the project.
+  __tests__/: JavaScript or TypeScript test files.
+  fixtures/: Test fixtures, sample inputs, or expected outputs.
+  mocks/: Test doubles and mocked data used by automated tests.
+  docs/: Project documentation.
+  doc/: Project documentation.
+  documentation/: Project documentation.
+  examples/: Example projects, sample code, or usage demonstrations.
+  samples/: Sample code, data, or usage demonstrations.
+  scripts/: Utility scripts for development, automation, or maintenance.
+  tools/: Project-specific tooling and developer utilities.
+  config/: Project configuration files.
+  configs/: Project configuration files.
+  resources/: Runtime resources bundled with the application or package.
+  assets/: Static assets such as images, fonts, icons, or media files.
+  static/: Static files served or bundled without transformation.
+  public/: Public web assets served directly by the application.
+  dist/: Built distribution artifacts.
+  build/: Build output artifacts.
+  out/: Generated output artifacts.
+  target/: Build output artifacts and dependency cache.
+  coverage/: Test coverage reports.
+  reports/: Generated reports from tests, analysis, or automation.
+  logs/: Log files generated during local development or automation.
+  tmp/: Temporary files used during local development or tooling.
+  temp/: Temporary files used during local development or tooling.
+  cache/: Cached files generated by tooling.
+  vendor/: Vendored third-party dependencies or external source snapshots.
+  node_modules/: Installed Node.js dependencies.
+  .build/: Swift Package Manager build artifacts.
+  .cache/: Cached files generated by tooling.
+  .circleci/: CircleCI pipeline configuration.
+  .github/: GitHub repository automation, issue templates, workflows, and project metadata.
+  .gitlab/: GitLab project configuration and automation resources.
+  .vscode/: Visual Studio Code workspace settings, tasks, launch configs, or recommendations.
+  .idea/: JetBrains IDE project settings and workspace metadata.
+  .devcontainer/: Development container configuration for reproducible local environments.
+  .agents/: AI agent configuration, skills, and automation resources for this repository.
+  .claude/: Claude-specific project configuration, commands, rules, and agent instructions.

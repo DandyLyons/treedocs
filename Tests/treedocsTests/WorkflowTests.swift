@@ -106,10 +106,58 @@ struct WorkflowTests {
         )
 
         #expect(collector.requestedPaths == ["README.md", "Sources", "Sources/App.swift"])
+        #expect(collector.requestedCandidates.first { $0.path == "README.md" }?.suggestedDescription == "Project overview, setup instructions, and usage documentation.")
+        #expect(collector.requestedCandidates.first { $0.path == "Sources" }?.suggestedDescription == "Swift package source code.")
+        #expect(collector.requestedCandidates.first { $0.path == "Sources/App.swift" }?.suggestedDescription == nil)
         #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.description == "Project readme")
         #expect(TreeOperations.entry(at: "Sources", in: synced.tree)?.description == "Source files")
         #expect(TreeOperations.entry(at: "Sources/App.swift", in: synced.tree)?.description == "Application entry point")
         try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
+    }
+
+    @Test
+    func `Description suggestion catalog loads bundled YAML and matches common paths`() throws {
+        let catalog = try DescriptionSuggestionCatalog.bundled()
+
+        #expect(catalog.suggestion(for: "README.md", isDirectory: false) == "Project overview, setup instructions, and usage documentation.")
+        #expect(catalog.suggestion(for: "docs/README.md", isDirectory: false) == "Project overview, setup instructions, and usage documentation.")
+        #expect(catalog.suggestion(for: ".gitignore", isDirectory: false) == "Git ignore rules for generated files, local settings, and build artifacts.")
+        #expect(catalog.suggestion(for: "tmp", isDirectory: true) == "Temporary files used during local development or tooling.")
+        #expect(catalog.suggestion(for: "AGENTS.md", isDirectory: false) == "Repository instructions for AI coding agents.")
+        #expect(catalog.suggestion(for: ".agents", isDirectory: true) == "AI agent configuration, skills, and automation resources for this repository.")
+        #expect(catalog.suggestion(for: ".agents/skills", isDirectory: true) == "Reusable AI agent skills for project-specific workflows.")
+        #expect(catalog.suggestion(for: ".claude", isDirectory: true) == "Claude-specific project configuration, commands, rules, and agent instructions.")
+    }
+
+    @Test
+    func `Description suggestion catalog supports exact file and directory matching`() throws {
+        let catalog = try DescriptionSuggestionCatalog.fromYAML("""
+        paths:
+          config/special.yml: Exact config file.
+          generated/: Exact generated directory.
+        files:
+          special.yml: Generic config file.
+          generated: Generated file.
+        directories:
+          generated/: Generated directory.
+        """)
+
+        #expect(catalog.suggestion(for: "config/special.yml", isDirectory: false) == "Exact config file.")
+        #expect(catalog.suggestion(for: "other/special.yml", isDirectory: false) == "Generic config file.")
+        #expect(catalog.suggestion(for: "generated", isDirectory: true) == "Exact generated directory.")
+        #expect(catalog.suggestion(for: "nested/generated", isDirectory: true) == "Generated directory.")
+        #expect(catalog.suggestion(for: "generated", isDirectory: false) == "Generated file.")
+    }
+
+    @Test
+    func `Missing description candidates display directory paths with trailing slash`() {
+        let directory = MissingDescriptionCandidate(path: "Sources", isDirectory: true, suggestedDescription: nil)
+        let nestedDirectory = MissingDescriptionCandidate(path: "Sources/App", isDirectory: true, suggestedDescription: nil)
+        let file = MissingDescriptionCandidate(path: "Sources/App.swift", isDirectory: false, suggestedDescription: nil)
+
+        #expect(directory.displayPath == "Sources/")
+        #expect(nestedDirectory.displayPath == "Sources/App/")
+        #expect(file.displayPath == "Sources/App.swift")
     }
 
     @Test

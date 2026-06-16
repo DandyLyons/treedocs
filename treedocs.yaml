@@ -2,7 +2,7 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:acab3347ab0fadfd727fb54284b11f3bf590ee4ecacff99188cd4cc61a301681
+signature: sha256:b3f888c0096b7c2e0d73bc37ed7d11275287320427680b9d733f9913de6bd8ee
 tree:
   .gitignore: Files and build artifacts ignored by Git.
   .spi.yml: Swift Package Index configuration for package documentation and compatibility
@@ -48,6 +48,8 @@ tree:
         _doc: ArgumentParser command implementations for treedocs subcommands.
       Core:
         ConfigLoader.swift: Loads and validates treedocs configuration from YAML.
+        DescriptionSuggestionCatalog.swift: Provides default description suggestions
+          for paths that are missing a description.
         IgnoreMatcher.swift: Applies standard excludes, gitignore rules, and treedocs
           ignore patterns.
         LinkResolver.swift: Resolves internal and external links between documented
@@ -73,6 +75,9 @@ tree:
         TreedocsFile.swift: Codable model for project metadata, signature, and documentation
           tree contents.
         _doc: Data models representing treedocs.yaml and related configuration.
+      Resources:
+        _doc: Assets included in the app bundle.
+        descriptions-suggestions.yaml: Default treedocs description suggestions catalog.
       TreeDocs.swift: Executable entry point that wires the root CLI and subcommands
         together.
       _doc: Main treedocs executable target.
@@ -92,5 +97,3 @@ tree:
       WorkflowTests.swift: End-to-end command workflow tests covering common CLI usage.
       _doc: Unit and workflow tests for the treedocs package.
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.
-  tmp:
-    _doc: Project-local temporary workspace for scratch files and generated artifacts.

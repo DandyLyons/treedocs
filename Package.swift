@@ -28,6 +28,7 @@ let package = Package(
             ],
             resources: [
                 .copy("../../DOCS/treedocs.schema.json"),
+                .copy("Resources/descriptions-suggestions.yaml"),
             ]
         ),
         .testTarget(
