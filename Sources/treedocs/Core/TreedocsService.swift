@@ -360,6 +360,24 @@ struct TreedocsService {
         return try renderer.render(tree: file.tree, subtreePath: subtreePath?.trimmedNilIfEmpty, config: loaded.config)
     }
 
+    /// Renders a progressive disclosure view of the root documentation tree.
+    ///
+    /// Requested paths are expansion targets within one merged tree rooted at `.`. Directory targets
+    /// expand one child level, file targets are shown as reachable leaves, and collapsed directories
+    /// report their immediate child counts.
+    ///
+    /// - Parameters:
+    ///   - rootPath: The repository root path supplied by the caller.
+    ///   - expandedPaths: Documentation paths to expand one level; an empty list expands the root.
+    /// - Returns: A newline-separated textual representation of the explored tree.
+    /// - Throws: `TreeDocsError` when repository state or a requested path cannot be found, or when configuration loading fails.
+    func explore(at rootPath: String, expandedPaths: [String]) throws -> String {
+        let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
+        let file = try store.load(at: repositoryPaths.stateFile)
+        let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: file.overrides)
+        return try renderer.renderExploration(tree: file.tree, expandedPaths: expandedPaths, config: loaded.config)
+    }
+
     /// Renders documentation for a path, optionally checking for drift first.
     ///
     /// When `checkFirst` is enabled, the output begins with a warning if the repository has

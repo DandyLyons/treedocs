@@ -700,6 +700,97 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Explore renders root level with header hint and collapsed directory counts`() throws {
+        try withRainbowConsoleOutput {
+        let tree = explorationFixtureTree()
+
+        let rendered = try TreeRenderer().renderExploration(
+            tree: tree,
+            expandedPaths: [],
+            config: TreedocsConfig(maxDescriptionLength: 120, checkSeverity: .error)
+        )
+
+        #expect(rendered == """
+        Expand collapsed folders with `treedocs explore <subpath>`.
+        \(".".green.bold)
+        ├── \("Docs/".green.bold) \("(0 items)".lightBlack)  Documentation
+        ├── \("README.md".green.bold)  Project readme
+        ├── \("Sources/".green.bold) \("(3 items)".lightBlack)  Source files
+        └── \("Tests/".green.bold) \("(1 item)".lightBlack)  Test suite
+        """)
+        #expect(!rendered.contains("Commands/"))
+        #expect(!rendered.contains("WorkflowTests.swift"))
+        }
+    }
+
+    @Test
+    func `Explore expands multiple requested directories one level`() throws {
+        try withRainbowConsoleOutput {
+        let rendered = try TreeRenderer().renderExploration(
+            tree: explorationFixtureTree(),
+            expandedPaths: ["Sources", "Tests"],
+            config: TreedocsConfig(maxDescriptionLength: 120, checkSeverity: .error)
+        )
+
+        #expect(rendered.contains("├── \("Sources/".green.bold)  Source files"))
+        #expect(rendered.contains("│   ├── \("Support/".green.bold) \("(0 items)".lightBlack)  Shared helpers"))
+        #expect(rendered.contains("│   ├── \("TreeDocs.swift".green.bold)  Entry point"))
+        #expect(rendered.contains("│   └── \("treedocs/".green.bold) \("(2 items)".lightBlack)  Executable target"))
+        #expect(rendered.contains("Expand collapsed folders with `treedocs explore <subpath>`."))
+        #expect(!rendered.contains("run `treedocs explore Sources/treedocs` to expand"))
+        #expect(rendered.contains("    └── \("WorkflowTests.swift".green.bold)  Workflow tests"))
+        #expect(!rendered.contains("ExploreCommand.swift"))
+        }
+    }
+
+    @Test
+    func `Explore opens ancestors for deep targets and expands target one level`() throws {
+        try withRainbowConsoleOutput {
+        let rendered = try TreeRenderer().renderExploration(
+            tree: explorationFixtureTree(),
+            expandedPaths: ["Sources/treedocs/Commands"],
+            config: TreedocsConfig(maxDescriptionLength: 120, checkSeverity: .error)
+        )
+
+        #expect(rendered.contains("├── \("Sources/".green.bold)  Source files"))
+        #expect(rendered.contains("│   └── \("treedocs/".green.bold)  Executable target"))
+        #expect(rendered.contains("│       └── \("Commands/".green.bold)  CLI commands"))
+        #expect(rendered.contains("│           ├── \("ExploreCommand.swift".green.bold)  Explore command"))
+        #expect(rendered.contains("│           └── \("LsCommand.swift".green.bold)  List command"))
+        #expect(!rendered.contains("Support/"))
+        #expect(!rendered.contains("TreeDocs.swift"))
+        }
+    }
+
+    @Test
+    func `Explore accepts file targets normalizes slashes and reports missing paths`() throws {
+        let tree = explorationFixtureTree()
+        let renderer = TreeRenderer()
+        let config = TreedocsConfig(maxDescriptionLength: 120, checkSeverity: .error)
+
+        let normalized = try renderer.renderExploration(tree: tree, expandedPaths: ["Sources/"], config: config)
+        let unnormalized = try renderer.renderExploration(tree: tree, expandedPaths: ["Sources"], config: config)
+        #expect(normalized == unnormalized)
+
+        let fileTarget = try renderer.renderExploration(
+            tree: tree,
+            expandedPaths: ["Sources/treedocs/Commands/LsCommand.swift"],
+            config: config
+        )
+        #expect(fileTarget.contains("LsCommand.swift"))
+        #expect(!fileTarget.contains("ExploreCommand.swift"))
+
+        do {
+            _ = try renderer.renderExploration(tree: tree, expandedPaths: ["Missing"], config: config)
+            Issue.record("Expected missing explore target to fail")
+        } catch {
+            #expect(error.localizedDescription.contains("Path not found in treedocs tree: Missing"))
+        }
+
+        #expect(TreeDocsMain.rewrittenArguments(["treedocs", "explore", "Sources"]) == ["explore", "Sources"])
+    }
+
+    @Test
     func `Show warns on validation issues and renders requested subtree`() throws {
         try withRainbowConsoleOutput {
         let workspace = try TestWorkspace()
@@ -831,5 +922,28 @@ struct WorkflowTests {
         let after = try (workspace.root + Path("treedocs.yaml")).read()
         #expect(prompt.contains("Ask clarifying questions for unclear paths"))
         #expect(after == before)
+    }
+
+    private func explorationFixtureTree() -> [String: TreeEntry] {
+        [
+            "Docs": TreeEntry(description: "Documentation", children: [:], isDirectory: true),
+            "README.md": TreeEntry(description: "Project readme"),
+            "Sources": TreeEntry(description: "Source files", children: [
+                "Support": TreeEntry(description: "Shared helpers", children: [:], isDirectory: true),
+                "TreeDocs.swift": TreeEntry(description: "Entry point"),
+                "treedocs": TreeEntry(description: "Executable target", children: [
+                    "Commands": TreeEntry(description: "CLI commands", children: [
+                        "ExploreCommand.swift": TreeEntry(description: "Explore command"),
+                        "LsCommand.swift": TreeEntry(description: "List command"),
+                    ], isDirectory: true),
+                    "Core": TreeEntry(description: "Core services", children: [
+                        "TreeRenderer.swift": TreeEntry(description: "Tree renderer"),
+                    ], isDirectory: true),
+                ], isDirectory: true),
+            ], isDirectory: true),
+            "Tests": TreeEntry(description: "Test suite", children: [
+                "WorkflowTests.swift": TreeEntry(description: "Workflow tests"),
+            ], isDirectory: true),
+        ]
     }
 }

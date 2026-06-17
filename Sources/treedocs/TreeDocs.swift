@@ -20,6 +20,7 @@ struct TreeDocs: ParsableCommand {
             ConfigCommand.self,
             PromptsCommand.self,
             LsCommand.self,
+            ExploreCommand.self,
             PathCommand.self,
         ]
     )
@@ -63,6 +64,7 @@ enum TreeDocsMain {
             "config",
             "prompts",
             "ls",
+            "explore",
             "path",
             "help",
         ]

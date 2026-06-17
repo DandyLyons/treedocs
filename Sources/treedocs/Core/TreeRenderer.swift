@@ -58,8 +58,59 @@ struct TreeRenderer {
         var flattened = [rootRow(label: rootLabel, entry: rootEntry, path: rootPath, config: config, statusOverrides: statusOverrides)]
         flattened.append(contentsOf: flattenForRender(tree: renderedTree, prefix: "", pathPrefix: rootPath, config: config, statusOverrides: statusOverrides))
 
-        let labelWidth = config.resolvedAlignColumns ? flattened.map(\.visibleLabelLength).max() ?? 0 : 0
-        let rendered = flattened.map { item in
+        return renderRows(flattened, config: config)
+    }
+
+    /// Renders the root tree with selected paths expanded one level.
+    ///
+    /// Exploration output is always rooted at `.`. The root's immediate children are shown, requested
+    /// directories expand exactly one level, and ancestor directories are opened only far enough to
+    /// make requested deeper paths reachable.
+    ///
+    /// - Parameters:
+    ///   - tree: The full documentation tree to render from.
+    ///   - expandedPaths: Paths to expand within the root tree. An empty list expands the root.
+    ///   - config: Display configuration controlling indentation, alignment, and description length.
+    ///   - statusOverrides: Optional status overrides for stale scanned paths.
+    /// - Returns: A newline-separated textual representation of the explored tree.
+    /// - Throws: `TreeDocsError` when a requested path does not exist in `tree`.
+    func renderExploration(
+        tree: [String: TreeEntry],
+        expandedPaths: [String],
+        config: TreedocsConfig,
+        statusOverrides: [String: EntryStatus] = [:]
+    ) throws -> String {
+        let normalizedPaths = expandedPaths.isEmpty ? [""] : expandedPaths.map(RelativePath.normalize)
+        let expandedPathSet = Set(normalizedPaths)
+
+        for path in expandedPathSet {
+            guard TreeOperations.entry(at: path, in: tree) != nil else {
+                throw TreeDocsError.message("Path not found in treedocs tree: \(path)")
+            }
+        }
+
+        var flattened = [RenderRow(
+            label: "Expand collapsed folders with `treedocs explore <subpath>`.",
+            visibleLabelLength: "Expand collapsed folders with `treedocs explore <subpath>`.".count,
+            description: nil
+        )]
+        flattened.append(rootRow(label: ".", entry: nil, path: "", config: config, statusOverrides: statusOverrides))
+        flattened.append(contentsOf: flattenForExploration(
+            tree: tree,
+            prefix: "",
+            pathPrefix: "",
+            expandedPaths: expandedPathSet,
+            config: config,
+            statusOverrides: statusOverrides
+        ))
+
+        return renderRows(flattened, config: config)
+    }
+
+    /// Applies optional column alignment and joins render rows.
+    private func renderRows(_ rows: [RenderRow], config: TreedocsConfig) -> String {
+        let labelWidth = config.resolvedAlignColumns ? rows.map(\.visibleLabelLength).max() ?? 0 : 0
+        let rendered = rows.map { item in
             let padding = config.resolvedAlignColumns ? String(repeating: " ", count: max(labelWidth - item.visibleLabelLength, 0)) : ""
             let label = item.label + padding
             if let description = item.description {
@@ -138,6 +189,84 @@ struct TreeRenderer {
         }
 
         return lines
+    }
+
+    /// Flattens a tree for progressive disclosure rendering.
+    private func flattenForExploration(
+        tree: [String: TreeEntry],
+        prefix: String,
+        pathPrefix: String,
+        expandedPaths: Set<String>,
+        config: TreedocsConfig,
+        statusOverrides: [String: EntryStatus]
+    ) -> [RenderRow] {
+        var lines: [RenderRow] = []
+        let keys = visibleExplorationKeys(in: tree, pathPrefix: pathPrefix, expandedPaths: expandedPaths)
+
+        for (index, key) in keys.enumerated() {
+            guard let entry = tree[key] else { continue }
+            let isLast = index == keys.count - 1
+            let connector = isLast ? "└── " : "├── "
+            let childPrefix = prefix + (isLast ? "    " : "│   ")
+            let path = pathPrefix.isEmpty ? key : pathPrefix + "/" + key
+            let marker = entry.isDirectory ? "\(key)/" : key
+            let status = statusOverrides[path] ?? entryStatus(for: entry, config: config)
+            let styledLabel = switch status {
+            case .clean: marker.green.bold
+            case .warning: marker.yellow.bold
+            case .error: marker.red.bold
+            }
+            var decorated = decorate(label: styledLabel, entry: entry)
+            var plain = decorate(label: marker, entry: entry)
+            let shouldDescend = entry.isDirectory && shouldDescendDuringExploration(path: path, expandedPaths: expandedPaths)
+            if entry.isDirectory, !shouldDescend {
+                let itemCount = collapsedItemCount(for: entry)
+                decorated += " " + itemCount.lightBlack
+                plain += " " + itemCount
+            }
+            lines.append(RenderRow(
+                label: prefix + connector + decorated,
+                visibleLabelLength: (prefix + connector + plain).count,
+                description: descriptionText(for: entry, config: config)
+            ))
+            if shouldDescend {
+                lines.append(contentsOf: flattenForExploration(
+                    tree: entry.children,
+                    prefix: childPrefix,
+                    pathPrefix: path,
+                    expandedPaths: expandedPaths,
+                    config: config,
+                    statusOverrides: statusOverrides
+                ))
+            }
+        }
+
+        return lines
+    }
+
+    /// Returns child keys visible under a directory in exploration mode.
+    private func visibleExplorationKeys(in tree: [String: TreeEntry], pathPrefix: String, expandedPaths: Set<String>) -> [String] {
+        let keys = tree.keys.sorted()
+        if pathPrefix.isEmpty || expandedPaths.contains(pathPrefix) {
+            return keys
+        }
+
+        return keys.filter { key in
+            let childPath = pathPrefix + "/" + key
+            return expandedPaths.contains(childPath) || expandedPaths.contains { $0.hasPrefix(childPath + "/") }
+        }
+    }
+
+    /// Returns whether a directory should reveal children in exploration mode.
+    private func shouldDescendDuringExploration(path: String, expandedPaths: Set<String>) -> Bool {
+        expandedPaths.contains(path) || expandedPaths.contains { $0.hasPrefix(path + "/") }
+    }
+
+    /// Formats the collapsed child count for a directory.
+    private func collapsedItemCount(for entry: TreeEntry) -> String {
+        let itemCount = entry.children.count
+        let itemLabel = itemCount == 1 ? "item" : "items"
+        return "(\(itemCount) \(itemLabel))"
     }
 
     /// Adds metadata markers to a rendered label.

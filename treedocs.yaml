@@ -2,7 +2,7 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.1.0
-signature: sha256:d908f3aa2ea93976725caa1795344b52dab13de7316249c29291d50f755db936
+signature: sha256:88c835c342415180ee577361f07202b450d412f0903ee0949c8f8e8637455347
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
@@ -39,6 +39,8 @@ tree:
         Common.swift: Shared CLI options and helpers used by multiple commands.
         ConfigCommand.swift: Implements configuration discovery commands for listing
           treedocs-related files.
+        ExploreCommand.swift: Implements the progressive disclosure explore command
+          for rendering shallow trees with selected expansion targets.
         InitCommand.swift: Creates an initial treedocs.yaml file for a repository.
         InspectCommand.swift: Displays documentation for a path, including resolved
           links and recursive views.
