@@ -15,7 +15,7 @@
 ## Installation
 `treedocs` currently supports macOS 13 and newer. Windows and Linux are not supported yet; please open a GitHub issue if you want either platform supported.
 
-GitHub Releases are the canonical release record. Package-manager distribution builds from source instead of shipping prebuilt binaries.
+GitHub Releases are the canonical release record. Package-manager distribution builds from source instead of shipping prebuilt binaries, so installing through Homebrew, Mint, or mise requires a Swift 6-capable build environment, usually Xcode 16+.
 
 ### Swift Package Manager
 From a local checkout:
@@ -60,16 +60,16 @@ brew install DandyLyons/tap/treedocs --HEAD
 Install the released CLI with mise's Swift Package Manager backend:
 
 ```bash
-mise use -g spm:DandyLyons/treedocs@0.1.0
+MISE_EXPERIMENTAL=true mise use -g spm:DandyLyons/treedocs@0.1.0
 ```
 
 To track the latest release:
 
 ```bash
-mise use -g spm:DandyLyons/treedocs
+MISE_EXPERIMENTAL=true mise use -g spm:DandyLyons/treedocs
 ```
 
-mise uses SwiftPM artifact bundles when releases publish them. `treedocs` does not currently ship prebuilt artifact bundles, so mise builds from source.
+mise uses SwiftPM artifact bundles when releases publish them. `treedocs` does not currently ship prebuilt artifact bundles, so mise builds from source. The mise `spm:` backend is currently experimental, so set `MISE_EXPERIMENTAL=true` when installing.
 
 ## Commands
 ```bash

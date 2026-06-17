@@ -61,12 +61,12 @@
     <section class="installation" aria-labelledby="installation-title">
       <details>
         <summary id="installation-title">Installation</summary>
-        <p><code>treedocs</code> currently supports macOS 13 and newer. To install, build from source using one of the methods below.</p>
+        <p><code>treedocs</code> currently supports macOS 13 and newer. Version 0.1.0 is source-build only, so installing through Homebrew, Mint, or mise requires a Swift 6-capable build environment, usually Xcode 16+.</p>
 
         <details class="install-method">
           <summary>mise</summary>
-          <pre><code class="language-bash">mise use -g spm:DandyLyons/treedocs@0.1.0</code></pre>
-          <p><a href="https://mise.jdx.dev/">mise</a> uses its Swift Package Manager backend. treedocs does not currently publish artifact bundles, so mise builds from source.</p>
+          <pre><code class="language-bash">MISE_EXPERIMENTAL=true mise use -g spm:DandyLyons/treedocs@0.1.0</code></pre>
+          <p><a href="https://mise.jdx.dev/">mise</a> uses its Swift Package Manager backend. treedocs does not currently publish artifact bundles, so mise builds from source. The mise <code>spm:</code> backend is currently experimental, so set <code>MISE_EXPERIMENTAL=true</code> when installing.</p>
         </details>
 
         <details class="install-method">
