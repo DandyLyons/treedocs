@@ -11,7 +11,13 @@
   <main class="shell">
     <section class="hero" aria-labelledby="title">
       <p class="eyebrow">Swift CLI</p>
-      <h1 id="title">treedocs</h1>
+      <div class="title-row">
+        <h1 id="title">treedocs</h1>
+        <div class="badges" aria-label="Project metadata">
+          <a href="https://github.com/DandyLyons/treedocs/releases">v0.1.0</a>
+          <span>macOS 13+</span>
+        </div>
+      </div>
       <p class="lede">Understand any codebase faster with a documented <code>tree</code> for every file and folder.</p>
       <div class="actions" aria-label="Primary links">
         <a href="https://github.com/DandyLyons/treedocs">GitHub Repository</a>
@@ -52,12 +58,41 @@
       </article>
     </section>
 
+    <section class="installation" aria-labelledby="installation-title">
+      <details>
+        <summary id="installation-title">Installation</summary>
+        <p><code>treedocs</code> currently supports macOS 13 and newer. <br> To install, build from source using one of the methods below.</p>
+
+        <details class="install-method">
+          <summary>mise</summary>
+          <pre><code class="language-bash">mise use -g spm:DandyLyons/treedocs@0.1.0</code></pre>
+          <p><a href="https://mise.jdx.dev/">mise</a> uses its Swift Package Manager backend. Until treedocs publishes artifact bundles, mise builds from source.</p>
+        </details>
+
+        <details class="install-method">
+          <summary>Homebrew</summary>
+          <pre><code class="language-bash">brew install DandyLyons/tap/treedocs</code></pre>
+          <p>The stable <a href="https://brew.sh/">Homebrew</a> formula will be published after the first GitHub Release is tagged and the source archive SHA256 is available.</p>
+        </details>
+
+        <details class="install-method">
+          <summary>Mint</summary>
+          <pre><code class="language-bash">mint install DandyLyons/treedocs@0.1.0
+mint run DandyLyons/treedocs@0.1.0 --help</code></pre>
+          <p><a href="https://github.com/yonaskolb/Mint">Mint</a> builds the Swift executable package from the tagged GitHub source.</p>
+        </details>
+      </details>
+    </section>
+
     <section class="quickstart" aria-labelledby="quickstart-title">
       <h2 id="quickstart-title">Quick Start</h2>
-      <pre><code class="language-bash">treedocs init   # Create a treedocs.yaml file
-treedocs sync   # Synchronize treedocs.yaml with your current folder structure and check for errors.
-treedocs show . # Show the documented tree
-treedocs check  # Check for errors in treedocs.yaml.</code></pre>
+      <pre><code class="language-bash">
+treedocs init      # Create a treedocs.yaml file
+treedocs sync      # Synchronize treedocs.yaml with your current folder structure and check for errors.
+treedocs show .    # Show the documented tree
+treedocs check     # Check for errors in treedocs.yaml.
+treedocs explore . # Progressive disclosure exploration of the codebase. Perfect for agent exploration.
+</code></pre>
     </section>
   </main>
 </body>

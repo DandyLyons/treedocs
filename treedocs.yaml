@@ -4,7 +4,7 @@ project:
   name: treedocs
   version: 0.1.0
 schema_version: 0.1.0
-signature: sha256:88c835c342415180ee577361f07202b450d412f0903ee0949c8f8e8637455347
+signature: sha256:36cd9c31e56ab1ce279921f6a6821a53574831c00c07d8d3ce0b97587955c32f
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
@@ -24,6 +24,9 @@ tree:
       add if treedocs inspected the git history and compared it to the treedocs.yaml
       over time.
     InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
+    Release Strategy.md: Documents CLI and JSON Schema release procedures, including
+      GitHub Releases, Homebrew tap publishing, schema immutability, and GitHub Pages
+      schema deployment.
     _doc: Supplemental project documentation and schema assets.
     schema-cli-usage.md: An overview of the current treedocs JSONSchema and what schema
       features have been used and have not been used in the CLI features.
@@ -112,6 +115,11 @@ tree:
       _doc: Unit and workflow tests for the treedocs package.
   contrib:
     _doc: Shared examples and optional integration assets for treedocs users.
+    homebrew:
+      _doc: Homebrew formula templates and tap publishing assets for distributing
+        treedocs through Homebrew.
+      treedocs.rb: Template Homebrew formula for building treedocs from source and
+        publishing it through the DandyLyons homebrew tap.
     hooks:
       _doc: Suggested Git hook scripts that users can opt into installing.
       pre-commit: Suggested non-interactive Git pre-commit hook for syncing and checking

@@ -12,6 +12,61 @@
 - Renders a documented tree and resolves links for inspection
 - Finds relevant paths from a query for shell workflows
 
+## Installation
+`treedocs` currently supports macOS 13 and newer. Windows and Linux are not supported yet; please open a GitHub issue if you want either platform supported.
+
+The first public CLI release will be tagged as `0.1.0` when the project is ready. GitHub Releases will be the canonical release record. Initial package-manager distribution will build from source instead of shipping prebuilt binaries.
+
+### Swift Package Manager
+From a local checkout:
+
+```bash
+swift run treedocs --help
+```
+
+Or build a release binary:
+
+```bash
+swift build -c release
+.build/release/treedocs --help
+```
+
+### Mint
+After the first release is tagged, install or run the released CLI with Mint:
+
+```bash
+mint install DandyLyons/treedocs@0.1.0
+mint run DandyLyons/treedocs@0.1.0 --help
+```
+
+Mint builds Swift executable packages from source and links installed tools through its configured Mint bin path.
+
+### Homebrew
+Homebrew distribution will use a dedicated tap repository at `DandyLyons/homebrew-tap`, which can host formulae for multiple DandyLyons tools. The stable `treedocs` formula will be published there after the `0.1.0` GitHub Release exists and the release source archive SHA256 can be recorded.
+
+The intended stable install command is:
+
+```bash
+brew install DandyLyons/tap/treedocs
+```
+
+This repository includes a formula template at `contrib/homebrew/treedocs.rb` for publishing to the tap.
+
+### mise
+After the first release is tagged, install the released CLI with mise's Swift Package Manager backend:
+
+```bash
+mise use -g spm:DandyLyons/treedocs@0.1.0
+```
+
+To track the latest release once releases exist:
+
+```bash
+mise use -g spm:DandyLyons/treedocs
+```
+
+mise uses SwiftPM artifact bundles when releases publish them. Until `treedocs` ships prebuilt artifact bundles, mise falls back to building from source.
+
 ## Commands
 ```bash
 swift run treedocs init

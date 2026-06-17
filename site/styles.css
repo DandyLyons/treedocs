@@ -49,6 +49,39 @@ h1 {
   letter-spacing: -0.08em;
 }
 
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.85rem 1rem;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.55rem;
+}
+
+.badges a,
+.badges span {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.32rem 0.58rem;
+  color: var(--accent-strong);
+  background: rgba(24, 32, 39, 0.78);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.badges a:hover,
+.badges a:focus-visible {
+  border-color: var(--accent);
+}
+
 h2 {
   margin: 0 0 0.75rem;
   font-size: 1.15rem;
@@ -103,6 +136,7 @@ a {
 
 article,
 .example,
+.installation,
 .quickstart {
   border: 1px solid var(--border);
   border-radius: 1.25rem;
@@ -117,6 +151,41 @@ article p {
 
 .quickstart {
   margin-top: 1rem;
+}
+
+.installation {
+  margin-top: 1rem;
+}
+
+details > summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+}
+
+details > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0.35rem;
+}
+
+.installation > details > summary {
+  font-size: 1.15rem;
+}
+
+.install-method {
+  margin-top: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.9rem;
+  background: rgba(16, 20, 24, 0.42);
+}
+
+.install-method pre {
+  margin-top: 0.85rem;
+}
+
+.install-method p {
+  margin-bottom: 0;
 }
 
 .example {
