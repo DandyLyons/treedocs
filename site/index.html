@@ -50,7 +50,7 @@
       </article>
       <article>
         <h2>Stay Current</h2>
-        <p>Keep documentation from going stale with automatic drift checks that warn or fail. You can even install a Git pre-commit hook so that you never commit undocummented changes.</p>
+        <p>Keep documentation from going stale with automatic drift checks that warn or fail. You can even install a Git pre-commit hook so that you never commit undocumented changes.</p>
       </article>
       <article>
         <h2>Review With Context</h2>
@@ -61,18 +61,18 @@
     <section class="installation" aria-labelledby="installation-title">
       <details>
         <summary id="installation-title">Installation</summary>
-        <p><code>treedocs</code> currently supports macOS 13 and newer. <br> To install, build from source using one of the methods below.</p>
+        <p><code>treedocs</code> currently supports macOS 13 and newer. To install, build from source using one of the methods below.</p>
 
         <details class="install-method">
           <summary>mise</summary>
           <pre><code class="language-bash">mise use -g spm:DandyLyons/treedocs@0.1.0</code></pre>
-          <p><a href="https://mise.jdx.dev/">mise</a> uses its Swift Package Manager backend. Until treedocs publishes artifact bundles, mise builds from source.</p>
+          <p><a href="https://mise.jdx.dev/">mise</a> uses its Swift Package Manager backend. treedocs does not currently publish artifact bundles, so mise builds from source.</p>
         </details>
 
         <details class="install-method">
           <summary>Homebrew</summary>
           <pre><code class="language-bash">brew install DandyLyons/tap/treedocs</code></pre>
-          <p>The stable <a href="https://brew.sh/">Homebrew</a> formula will be published after the first GitHub Release is tagged and the source archive SHA256 is available.</p>
+          <p>The <a href="https://brew.sh/">Homebrew</a> formula builds treedocs from source through the DandyLyons tap.</p>
         </details>
 
         <details class="install-method">

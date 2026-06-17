@@ -6,6 +6,9 @@ let package = Package(
     platforms: [
         .macOS(.v13),
     ],
+    products: [
+        .executable(name: "treedocs", targets: ["treedocs"]),
+    ],
     dependencies: [
         .package(url: "https://github.com/jpsim/Yams.git", from: "6.2.1"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.7.1"),

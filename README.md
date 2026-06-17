@@ -15,7 +15,7 @@
 ## Installation
 `treedocs` currently supports macOS 13 and newer. Windows and Linux are not supported yet; please open a GitHub issue if you want either platform supported.
 
-The first public CLI release will be tagged as `0.1.0` when the project is ready. GitHub Releases will be the canonical release record. Initial package-manager distribution will build from source instead of shipping prebuilt binaries.
+GitHub Releases are the canonical release record. Package-manager distribution builds from source instead of shipping prebuilt binaries.
 
 ### Swift Package Manager
 From a local checkout:
@@ -32,7 +32,7 @@ swift build -c release
 ```
 
 ### Mint
-After the first release is tagged, install or run the released CLI with Mint:
+Install or run the released CLI with Mint:
 
 ```bash
 mint install DandyLyons/treedocs@0.1.0
@@ -42,45 +42,49 @@ mint run DandyLyons/treedocs@0.1.0 --help
 Mint builds Swift executable packages from source and links installed tools through its configured Mint bin path.
 
 ### Homebrew
-Homebrew distribution will use a dedicated tap repository at `DandyLyons/homebrew-tap`, which can host formulae for multiple DandyLyons tools. The stable `treedocs` formula will be published there after the `0.1.0` GitHub Release exists and the release source archive SHA256 can be recorded.
+Homebrew distribution uses the dedicated `DandyLyons/homebrew-tap` repository, which can host formulae for multiple DandyLyons tools.
 
-The intended stable install command is:
+Install with Homebrew:
 
 ```bash
 brew install DandyLyons/tap/treedocs
 ```
 
-This repository includes a formula template at `contrib/homebrew/treedocs.rb` for publishing to the tap.
+Development builds from `main` are also available:
+
+```bash
+brew install DandyLyons/tap/treedocs --HEAD
+```
 
 ### mise
-After the first release is tagged, install the released CLI with mise's Swift Package Manager backend:
+Install the released CLI with mise's Swift Package Manager backend:
 
 ```bash
 mise use -g spm:DandyLyons/treedocs@0.1.0
 ```
 
-To track the latest release once releases exist:
+To track the latest release:
 
 ```bash
 mise use -g spm:DandyLyons/treedocs
 ```
 
-mise uses SwiftPM artifact bundles when releases publish them. Until `treedocs` ships prebuilt artifact bundles, mise falls back to building from source.
+mise uses SwiftPM artifact bundles when releases publish them. `treedocs` does not currently ship prebuilt artifact bundles, so mise builds from source.
 
 ## Commands
 ```bash
-swift run treedocs init
-swift run treedocs sync
-swift run treedocs check
-swift run treedocs inspect Sources/treedocs --recursive
-swift run treedocs update README.md "Project overview"
-swift run treedocs update Sources/treedocs/Core --add-reference DOCS/InitialSpecs.md
-swift run treedocs ls
-swift run treedocs ls Sources/treedocs
-swift run treedocs path renderer
+treedocs init
+treedocs sync
+treedocs check
+treedocs inspect Sources/treedocs --recursive
+treedocs update README.md "Project overview"
+treedocs update Sources/treedocs/Core --add-reference DOCS/InitialSpecs.md
+treedocs ls
+treedocs ls Sources/treedocs
+treedocs path renderer
 ```
 
-Run `swift run treedocs --help` for the full command surface.
+Run `treedocs --help` for the full command surface.
 
 ## Interactive CLI Behavior
 Commands with interactive workflows open terminal UI by default when stdin and stdout are attached to a TTY. For example, `treedocs sync` lets you fill missing descriptions before saving when it is run from an interactive terminal.
@@ -88,8 +92,8 @@ Commands with interactive workflows open terminal UI by default when stdin and s
 Use `-n, --non-interactive` to opt out explicitly in scripts or local automation:
 
 ```bash
-swift run treedocs sync --non-interactive
-swift run treedocs sync -n
+treedocs sync --non-interactive
+treedocs sync -n
 ```
 
 Non-TTY contexts, such as CI and redirected input/output, skip interactive UI automatically.
