@@ -1,7 +1,7 @@
 project:
   last_updated: '2026-05-08'
   name: treedocs
-  version: 0.0.0
+  version: 0.1.0
 signature: sha256:d908f3aa2ea93976725caa1795344b52dab13de7316249c29291d50f755db936
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
@@ -23,7 +23,7 @@ tree:
       over time.
     InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
     _doc: Supplemental project documentation and schema assets.
-    schema-cli-usage.md: An overview of the current treedocs JSONSchmea and what schema
+    schema-cli-usage.md: An overview of the current treedocs JSONSchema and what schema
       features have been used and have not been used in the CLI features.
   LICENSE: MIT license terms for using, copying, modifying, and distributing treedocs.
   Package.resolved: Swift Package Manager dependency resolution lockfile for reproducible
