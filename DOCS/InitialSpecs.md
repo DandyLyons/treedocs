@@ -51,13 +51,13 @@ The `treedocs.yaml` file contains the documentation tree and project-specific me
 - ✅ **`signature`**: A system-generated checksum or state-hash used to detect drift quickly during `check`.
 - ✅ **`tree`**: The nested object representing the file system hierarchy.
 ### 3.2 Canonical Schema ✅
-- ✅ The canonical schema lives at `DOCS/treedocs.schema.json`.
+- ✅ The canonical schema lives at `site/schemas/0.1.0/treedocs.schema.json`.
 - ✅ Validation runs against parsed YAML data, not raw YAML text. `treedocs.yaml` remains the user-facing format, while JSON Schema defines the structural contract.
 - ✅ The schema covers root keys, project metadata, override values, signature format, tree entry variants, reserved keys (`_doc`, `_link`), descriptions, and references.
 - ✅ The schema must remain usable outside the Swift CLI by editors, CI, and other agents.
 ### 3.3 CLI Validation ✅
 `treedocs check` performs three validations:
-1. ✅ It validates `treedocs.yaml` against `DOCS/treedocs.schema.json`.
+1. ✅ It validates `treedocs.yaml` against `site/schemas/0.1.0/treedocs.schema.json`.
 2. ✅ It compares `treedocs.yaml` against the repository's actual folder structure and highlights discrepancies.
 3. ✅ It discovers nested `treedocs.yaml` files and reports when a parent `treedocs.yaml` is contradicted by a child `treedocs.yaml` for a subtree.
 
@@ -179,7 +179,7 @@ The generated prompt should instruct the agent to:
 - ✅ Fill missing descriptions with concise, accurate explanations based on source files, neighboring paths, names, imports, tests, and documentation.
 - ✅ Ask the user clarifying questions for unclear paths instead of inventing uncertain descriptions.
 - ✅ Update `treedocs.yaml` only after unclear details have been resolved or explicitly marked as needing user input.
-- ✅ Keep the result valid against `DOCS/treedocs.schema.json`.
+- ✅ Keep the result valid against `site/schemas/0.1.0/treedocs.schema.json`.
 
 The command writes the prompt to stdout. It does not modify `treedocs.yaml` itself.
 ## 5. Advanced Features

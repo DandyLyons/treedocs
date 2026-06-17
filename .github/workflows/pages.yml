@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - site/**
+      - .env.schema
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -31,10 +32,22 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Load environment variables
+        uses: dmno-dev/varlock-action@v1.0.1
+        with:
+          show-summary: true
+
+      - name: Prepare Pages artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/treedocs-pages"
+          cp -R site/. "$RUNNER_TEMP/treedocs-pages/"
+          mkdir -p "$RUNNER_TEMP/treedocs-pages/schemas/latest"
+          cp "site/schemas/$CURRENT_TREEDOCS_JSONSCHEMA_VERSION/treedocs.schema.json" "$RUNNER_TEMP/treedocs-pages/schemas/latest/treedocs.schema.json"
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: ${{ runner.temp }}/treedocs-pages
 
       - name: Deploy to GitHub Pages
         id: deployment

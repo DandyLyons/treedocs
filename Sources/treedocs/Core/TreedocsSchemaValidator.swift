@@ -106,7 +106,7 @@ struct TreedocsSchemaValidator {
     private func formatErrors(_ errors: [ValidationError]?) -> String {
         let flattened = flatten(errors ?? [])
         guard !flattened.isEmpty else {
-            return "document does not match DOCS/treedocs.schema.json."
+            return "document does not match site/schemas/0.1.0/treedocs.schema.json."
         }
         return flattened.map { error in
             "\(error.instanceLocation): \(error.message)"

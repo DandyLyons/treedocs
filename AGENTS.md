@@ -29,6 +29,10 @@ swift test --filter "IgnoreMatcher"
 ## GitHub
 - Use the `DandyLyons` GitHub account for this repository before running `gh` commands: `gh auth switch --user DandyLyons`
 
+## Security
+- Never use `npx`; it can execute unpinned remote packages and is not allowed in this repository.
+- Use the installed `varlock` binary directly for Varlock commands, for example `varlock printenv CURRENT_TREEDOCS_JSONSCHEMA_VERSION`.
+
 ## Codebase Exploration
 - On this computer, `treedocs` is symlinked to the debug binary produced by `swift build`, so `treedocs` is equivalent to `swift run treedocs`. Prefer running `treedocs` directly instead of `swift run treedocs`.
 - When you need to explore or understand the codebase, run `treedocs` first. It immediately generates a tree explanation of the repository's files and folders.

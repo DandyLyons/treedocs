@@ -1,6 +1,6 @@
 # treedocs Schema CLI Usage
 
-This note summarizes which parts of `DOCS/treedocs.schema.json` are currently used by the CLI and which parts are parsed or preserved but not yet meaningfully exposed.
+This note summarizes which parts of `site/schemas/0.1.0/treedocs.schema.json` are currently used by the CLI and which parts are parsed or preserved but not yet meaningfully exposed.
 
 ## Actively Used
 

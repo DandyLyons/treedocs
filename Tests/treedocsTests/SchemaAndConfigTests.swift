@@ -76,7 +76,7 @@ struct SchemaAndConfigTests {
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
         _ = try service.initialize(at: workspace.root.string, force: false)
-        try workspace.writeFile("DOCS/treedocs.schema.json", contents: "not json")
+        try workspace.writeFile("site/schemas/0.1.0/treedocs.schema.json", contents: "not json")
 
         try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
     }

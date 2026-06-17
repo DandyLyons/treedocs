@@ -2,8 +2,9 @@ project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.0.0
-signature: sha256:d75f002ac2e0c3c30ccb7c1f641de22af2195861ab86dfbec93e908d65080d70
+signature: sha256:d908f3aa2ea93976725caa1795344b52dab13de7316249c29291d50f755db936
 tree:
+  .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
     _doc: GitHub repository automation and workflow configuration.
     workflows:
@@ -24,7 +25,6 @@ tree:
     _doc: Supplemental project documentation and schema assets.
     schema-cli-usage.md: An overview of the current treedocs JSONSchmea and what schema
       features have been used and have not been used in the CLI features.
-    treedocs.schema.json: JSON Schema describing the expected treedocs.yaml structure.
   LICENSE: MIT license terms for using, copying, modifying, and distributing treedocs.
   Package.resolved: Swift Package Manager dependency resolution lockfile for reproducible
     builds.
@@ -115,5 +115,11 @@ tree:
   site:
     _doc: Static files deployed to the project GitHub Pages site.
     index.html: Landing page for the treedocs GitHub Pages site.
+    schemas:
+      0.1.0:
+        _doc: Immutable treedocs schema release 0.1.0.
+        treedocs.schema.json: Versioned canonical JSON Schema for treedocs.yaml release
+          0.1.0.
+      _doc: Public JSON Schema endpoints served by the GitHub Pages site.
     styles.css: Stylesheet for the treedocs GitHub Pages landing page.
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.

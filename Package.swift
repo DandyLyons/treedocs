@@ -27,7 +27,7 @@ let package = Package(
                 .product(name: "Rainbow", package: "Rainbow"),
             ],
             resources: [
-                .copy("../../DOCS/treedocs.schema.json"),
+                .copy("../../site/schemas/0.1.0/treedocs.schema.json"),
                 .copy("Resources/descriptions-suggestions.yaml"),
             ]
         ),

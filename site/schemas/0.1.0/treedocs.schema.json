@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://treedocs.dev/schemas/treedocs.schema.json",
+  "$id": "https://dandylyons.github.io/treedocs/schemas/0.1.0/treedocs.schema.json",
   "title": "treedocs.yaml",
   "description": "Schema for the YAML repository documentation state maintained by treedocs.",
   "type": "object",

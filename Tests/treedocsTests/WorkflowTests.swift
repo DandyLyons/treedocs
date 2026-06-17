@@ -815,7 +815,7 @@ struct WorkflowTests {
 
         let prompt = try service.fillPrompt(at: workspace.root.string)
         #expect(prompt.contains("Fill missing descriptions"))
-        #expect(prompt.contains("DOCS/treedocs.schema.json"))
+        #expect(prompt.contains("site/schemas/0.1.0/treedocs.schema.json"))
     }
 
     @Test

@@ -518,7 +518,7 @@ struct TreedocsService {
         - Fill missing descriptions with concise, accurate explanations based on source files, neighboring paths, names, imports, tests, and documentation.
         - Ask clarifying questions for unclear paths instead of inventing uncertain descriptions.
         - Update `treedocs.yaml` only after unclear details have been resolved or explicitly marked as needing user input.
-        - Keep the result valid against `DOCS/treedocs.schema.json`.
+        - Keep the result valid against `site/schemas/0.1.0/treedocs.schema.json`.
         """
     }
 
