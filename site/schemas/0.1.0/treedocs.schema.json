@@ -6,11 +6,19 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "project",
     "signature",
     "tree"
   ],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "0.1.0"
+      ],
+      "description": "The treedocs.yaml file-format schema version. This is distinct from project.version."
+    },
     "project": {
       "$ref": "#/$defs/project"
     },

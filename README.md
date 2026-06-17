@@ -76,20 +76,25 @@ Rainbow also respects standard color environment controls: set `NO_COLOR` to dis
 
 ## treedocs.yaml Shape
 `treedocs.yaml` contains:
+- `schema_version`: the semver treedocs file-format schema version
 - `project`: metadata such as `name`, `version`, and `last_updated`
 - `overrides`: project-local config overrides
 - `signature`: a deterministic structural hash of the scanned tree
 - `tree`: the documented filesystem mirror
 
-The YAML format should be defined by a canonical JSON Schema so the CLI, tests, editors, CI workflows, and external agents can validate the same structure.
+The YAML format is defined by a canonical JSON Schema so the CLI, tests, editors, CI workflows, and external agents can validate the same structure. Generated files include a managed YAML language-server header comment that points editor tooling at the matching public schema URL. `treedocs` regenerates this header whenever it saves `treedocs.yaml`; arbitrary YAML comments are not preserved.
+
+`schema_version` identifies the `treedocs.yaml` file-format schema and follows semver, such as `0.1.0`. `project.version` is different: it is the documented project's own version and is not used to resolve the treedocs schema.
 
 Directory entries use `_doc` for their description. Entries can also include `references` and `_link`.
 
-YAML comments in `treedocs.yaml` are not preserved when the CLI loads and rewrites the file. Store durable notes as descriptions or `references` instead of comments.
+YAML comments in `treedocs.yaml`, other than the managed language-server schema header, are not preserved when the CLI loads and rewrites the file. Store durable notes as descriptions or `references` instead of comments.
 
 Example:
 
 ```yaml
+# yaml-language-server: $schema=https://dandylyons.github.io/treedocs/schemas/0.1.0/treedocs.schema.json
+schema_version: "0.1.0"
 project:
   name: treedocs
   version: 0.0.0

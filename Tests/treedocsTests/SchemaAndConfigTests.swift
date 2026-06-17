@@ -9,6 +9,7 @@ struct SchemaAndConfigTests {
     @Test
     func `Canonical schema accepts InitialSpecs section 3_5 example`() throws {
         let yaml = """
+        schema_version: "0.1.0"
         project:
           name: "ScraperBot"
           version: "2.1.0"
@@ -43,6 +44,7 @@ struct SchemaAndConfigTests {
     func `Store rejects invalid schema fixture with field path`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("treedocs.yaml", contents: """
+        schema_version: "0.1.0"
         project:
           name: Example
           version: "1.0.0"
@@ -68,6 +70,30 @@ struct SchemaAndConfigTests {
         _ = try service.initialize(at: workspace.root.string, force: false)
 
         try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
+        try expectManagedSchemaMetadata(in: workspace)
+    }
+
+    @Test
+    func `Sync and update rewrites include managed schema metadata`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+        _ = try service.sync(at: workspace.root.string, interactive: false)
+        try expectManagedSchemaMetadata(in: workspace)
+
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: "Project readme",
+            addReferences: [],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+        try expectManagedSchemaMetadata(in: workspace)
     }
 
     @Test
@@ -128,10 +154,11 @@ struct SchemaAndConfigTests {
     }
 
     @Test
-    func `Store rewrites do not preserve YAML comments but keep structured notes`() throws {
+    func `Store rewrites drop arbitrary YAML comments but keep managed schema header and structured notes`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("treedocs.yaml", contents: """
         # Root-level comment that should not survive serialization.
+        schema_version: "0.1.0"
         project:
           name: Example
           version: "1.0.0"
@@ -153,6 +180,7 @@ struct SchemaAndConfigTests {
         let roundTrip = try workspace.loadState()
         #expect(!rewritten.contains("Root-level comment"))
         #expect(!rewritten.contains("Inline note"))
+        try expectManagedSchemaMetadata(in: workspace)
         #expect(TreeOperations.entry(at: "README.md", in: roundTrip.tree)?.references == ["DOCS/README.md"])
         #expect(TreeOperations.entry(at: "Package.swift", in: roundTrip.tree)?.description == "Package manifest")
     }
@@ -621,4 +649,15 @@ struct SchemaAndConfigTests {
         let loaded = try loader.load(root: workspace.root, stateOverrides: nil)
         #expect(loaded.config.resolvedIndentSize == 2)
     }
+}
+
+private func expectManagedSchemaMetadata(in workspace: TestWorkspace) throws {
+    let yaml = try String(contentsOf: (workspace.root + Path("treedocs.yaml")).url, encoding: .utf8)
+    let file = try TreedocsFile.load(from: yaml)
+    let expectedHeader = TreedocsSchemaMetadata.languageServerHeader(for: file.schemaVersion)
+
+    #expect(file.schemaVersion == TreedocsSchemaMetadata.currentVersion)
+    #expect(yaml.hasPrefix("\(expectedHeader)\n"))
+    #expect(yaml.contains("schema_version:"))
+    #expect(expectedHeader.contains("/schemas/\(file.schemaVersion)/"))
 }

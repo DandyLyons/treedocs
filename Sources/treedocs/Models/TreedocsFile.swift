@@ -1,6 +1,22 @@
 import Foundation
 import Yams
 
+/// Shared schema metadata for generated `treedocs.yaml` files.
+enum TreedocsSchemaMetadata {
+    /// The current treedocs file-format schema version.
+    static let currentVersion = "0.1.0"
+
+    /// Returns the public JSON Schema URL for a schema version.
+    static func schemaURL(for version: String) -> String {
+        "https://dandylyons.github.io/treedocs/schemas/\(version)/treedocs.schema.json"
+    }
+
+    /// Returns the managed YAML language-server declaration for a schema version.
+    static func languageServerHeader(for version: String) -> String {
+        "# yaml-language-server: $schema=\(schemaURL(for: version))"
+    }
+}
+
 /// Stores project metadata from `treedocs.yaml`.
 ///
 /// `ProjectMetadata` models the root `project` section. Known fields are exposed directly while
@@ -355,6 +371,9 @@ struct TreeEntry: Equatable {
 /// The model mirrors the root YAML object: project metadata, optional configuration overrides, an
 /// optional filesystem signature, and the recursive documentation tree.
 struct TreedocsFile: Equatable {
+    /// The treedocs file-format schema version stored at root `schema_version`.
+    var schemaVersion: String
+
     /// Project metadata from the root `project` section.
     var project: ProjectMetadata
 
@@ -375,11 +394,13 @@ struct TreedocsFile: Equatable {
     ///   - signature: Optional filesystem signature.
     ///   - tree: The documented repository tree.
     init(
+        schemaVersion: String = TreedocsSchemaMetadata.currentVersion,
         project: ProjectMetadata = ProjectMetadata(),
         overrides: TreedocsConfig? = nil,
         signature: String? = nil,
         tree: [String: TreeEntry] = [:]
     ) {
+        self.schemaVersion = schemaVersion.trimmedNilIfEmpty ?? TreedocsSchemaMetadata.currentVersion
         self.project = project
         self.overrides = overrides
         self.signature = signature
@@ -404,6 +425,7 @@ struct TreedocsFile: Equatable {
         }
 
         let project = ProjectMetadata.fromYAML(mapping["project"]) ?? ProjectMetadata()
+        let schemaVersion = parseString(mapping["schema_version"]) ?? TreedocsSchemaMetadata.currentVersion
         let overrides = try TreedocsConfig.fromYAML(mapping["overrides"])
         let signature = parseString(mapping["signature"])
 
@@ -416,6 +438,7 @@ struct TreedocsFile: Equatable {
         }
 
         return TreedocsFile(
+            schemaVersion: schemaVersion,
             project: project,
             overrides: overrides,
             signature: signature,
@@ -432,6 +455,7 @@ struct TreedocsFile: Equatable {
     /// - Throws: YAML serialization errors from Yams.
     func toYAMLString() throws -> String {
         var root: [String: Any] = [:]
+        root["schema_version"] = schemaVersion
         let projectValue = project.toYAMLValue()
         if !projectValue.isEmpty {
             root["project"] = projectValue
