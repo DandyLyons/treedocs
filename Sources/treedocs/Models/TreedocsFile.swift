@@ -6,6 +6,14 @@ enum TreedocsSchemaMetadata {
     /// The current treedocs file-format schema version.
     static let currentVersion = "0.1.0"
 
+    /// Schema versions this CLI can read and validate.
+    static let supportedVersions = [currentVersion]
+
+    /// Returns whether this CLI has bundled handling for a schema version.
+    static func isSupported(_ version: String) -> Bool {
+        supportedVersions.contains(version)
+    }
+
     /// Returns the public JSON Schema URL for a schema version.
     static func schemaURL(for version: String) -> String {
         "https://dandylyons.github.io/treedocs/schemas/\(version)/treedocs.schema.json"

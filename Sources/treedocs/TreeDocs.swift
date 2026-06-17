@@ -1,5 +1,11 @@
 import ArgumentParser
 
+/// Shared CLI release metadata.
+enum TreeDocsVersion {
+    /// The treedocs executable version, distinct from `schema_version` and `project.version`.
+    static let current = "0.1.0"
+}
+
 /// Defines the root `treedocs` command.
 ///
 /// `TreeDocs` is the top-level ArgumentParser command. It registers every supported subcommand and
@@ -10,6 +16,7 @@ struct TreeDocs: ParsableCommand {
         commandName: "treedocs",
         abstract: "Generate and maintain a tree-style documentation for your codebase, defined in a treedocs.yaml file.",
         discussion: "Scanner-backed commands respect ignore files and treat nested treedocs.yaml files as documentation boundaries: the parent records that child folder, but descendants are owned by the nested state file.",
+        version: TreeDocsVersion.current,
         subcommands: [
             InitCommand.self,
             SyncCommand.self,

@@ -28,8 +28,9 @@ struct TreedocsSchemaValidator {
             throw TreeDocsError.message("Schema validation failed: # must be an object with project, signature, and tree.")
         }
 
+        let schemaVersion = try schemaVersion(from: parsed)
         let instanceJSON = try jsonString(from: parsed, label: "treedocs.yaml")
-        let schemaJSON = try loadSchema(from: schemaPath)
+        let schemaJSON = try loadSchema(for: schemaVersion, from: schemaPath)
         let schema = try Schema(instance: schemaJSON)
         let result = try schema.validate(instance: instanceJSON)
         guard result.isValid else {
@@ -37,24 +38,56 @@ struct TreedocsSchemaValidator {
         }
     }
 
-    private func loadSchema(from explicitPath: Path?) throws -> String {
+    private func schemaVersion(from parsed: Any) throws -> String {
+        guard let mapping = parsed as? [String: Any] else {
+            throw TreeDocsError.message("Schema validation failed: # must be an object with project, signature, and tree.")
+        }
+
+        guard let version = parseString(mapping["schema_version"]) else {
+            throw TreeDocsError.message("Schema validation failed: missing required root schema_version.")
+        }
+
+        guard TreedocsSchemaMetadata.isSupported(version) else {
+            throw TreeDocsError.message(unsupportedSchemaVersionMessage(version))
+        }
+
+        return version
+    }
+
+    private func loadSchema(for version: String, from explicitPath: Path?) throws -> String {
         if let explicitPath, explicitPath.exists {
             return try readUTF8(explicitPath)
         }
 
-        return try bundledSchemaJSON()
+        return try bundledSchemaJSON(for: version)
     }
 
-    private func bundledSchemaJSON() throws -> String {
-        guard let url = Bundle.module.url(forResource: "treedocs.schema", withExtension: "json") else {
-            throw TreeDocsError.message("Unable to find bundled canonical schema treedocs.schema.json.")
+    private func bundledSchemaJSON(for version: String) throws -> String {
+        let resourceName = try bundledSchemaResourceName(for: version)
+
+        guard let url = Bundle.module.url(forResource: resourceName, withExtension: "json") else {
+            throw TreeDocsError.message("Unable to find bundled canonical schema for schema_version \"\(version)\".")
         }
 
         do {
             return try String(contentsOf: url, encoding: .utf8)
         } catch {
-            throw TreeDocsError.message("Failed to read bundled canonical schema treedocs.schema.json: \(error.localizedDescription)")
+            throw TreeDocsError.message("Failed to read bundled canonical schema for schema_version \"\(version)\": \(error.localizedDescription)")
         }
+    }
+
+    private func bundledSchemaResourceName(for version: String) throws -> String {
+        switch version {
+        case TreedocsSchemaMetadata.currentVersion:
+            return "treedocs.schema"
+        default:
+            throw TreeDocsError.message(unsupportedSchemaVersionMessage(version))
+        }
+    }
+
+    private func unsupportedSchemaVersionMessage(_ version: String) -> String {
+        let supported = TreedocsSchemaMetadata.supportedVersions.joined(separator: ", ")
+        return "Unsupported treedocs.yaml schema_version \"\(version)\". This CLI supports: \(supported). Upgrade treedocs or use a supported schema version."
     }
 
     private func readUTF8(_ path: Path) throws -> String {
@@ -106,7 +139,7 @@ struct TreedocsSchemaValidator {
     private func formatErrors(_ errors: [ValidationError]?) -> String {
         let flattened = flatten(errors ?? [])
         guard !flattened.isEmpty else {
-            return "document does not match site/schemas/0.1.0/treedocs.schema.json."
+            return "document does not match a bundled treedocs schema."
         }
         return flattened.map { error in
             "\(error.instanceLocation): \(error.message)"

@@ -904,6 +904,13 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Root command reports CLI version without shorthand rewriting`() throws {
+        #expect(TreeDocs.configuration.version == TreeDocsVersion.current)
+        #expect(TreeDocs.configuration.version == "0.1.0")
+        #expect(TreeDocsMain.rewrittenArguments(["treedocs", "--version"]) == ["--version"])
+    }
+
+    @Test
     func `Config file discovery and fill prompt support command scaffolding`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()

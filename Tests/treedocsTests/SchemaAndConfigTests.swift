@@ -41,6 +41,46 @@ struct SchemaAndConfigTests {
     }
 
     @Test
+    func `Validator rejects missing schema version before schema validation`() throws {
+        let yaml = """
+        project:
+          name: Example
+          version: "1.0.0"
+          last_updated: "2026-06-13"
+        signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        tree: {}
+        """
+
+        do {
+            try TreedocsSchemaValidator().validate(yaml: yaml)
+            Issue.record("Expected missing schema_version to fail")
+        } catch {
+            #expect(error.localizedDescription.contains("missing required root schema_version"))
+        }
+    }
+
+    @Test
+    func `Validator rejects unsupported future schema version before schema validation`() throws {
+        let yaml = """
+        schema_version: "99.0.0"
+        project:
+          name: Example
+          version: "1.0.0"
+          last_updated: "2026-06-13"
+        signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        tree: {}
+        """
+
+        do {
+            try TreedocsSchemaValidator().validate(yaml: yaml)
+            Issue.record("Expected unsupported schema_version to fail")
+        } catch {
+            #expect(error.localizedDescription.contains("Unsupported treedocs.yaml schema_version \"99.0.0\""))
+            #expect(error.localizedDescription.contains("This CLI supports: 0.1.0"))
+        }
+    }
+
+    @Test
     func `Store rejects invalid schema fixture with field path`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("treedocs.yaml", contents: """
