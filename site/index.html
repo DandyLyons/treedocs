@@ -94,6 +94,14 @@ treedocs check     # Check for errors in treedocs.yaml.
 treedocs explore . # Progressive disclosure exploration of the codebase. Perfect for agent exploration.
 </code></pre>
     </section>
+
+
+    <section class="quickstart" aria-labelledby="schema-title">
+      <h2 id="schema-title">The <code>treedocs.yaml</code> Schema</h2>
+      <p><code>treedocs.yaml</code> is a version-controlled map of your repository. It mirrors your file tree and stores a human-readable YAML description for every file and folder. This same description can be parsed and displayed with <code>treedocs</code>' rich tooling. The file format is defined by a <a href="https://dandylyons.github.io/treedocs/schemas/latest/treedocs.schema.json">canonical JSON Schema</a>, which means editors, CI tools, and AI agents can all parse, validate, and understand the same structure.</p>
+      <p>Keeping docs up to date is an ongoing task, but <code>treedocs</code> makes it easy! Running <code>treedocs sync</code> updates your <code>treedocs.yaml</code> file, adding new paths and removing ghost paths. All that's left to do is add short descriptions. It's easy to update descriptions with <code>treedocs update</code>. </p>
+      <p>Or simply ask an agent to fill in your <code>treedocs.yaml</code> file for you. Agents are extremely good at filling in descriptions and everything can be validated with <code>treedocs check</code>.</p>
+    </section>
   </main>
 </body>
 </html>
