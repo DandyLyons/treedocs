@@ -86,8 +86,26 @@ struct SyncResult {
     /// Whether `treedocs.yaml` was written.
     var saved: Bool
 
+    /// Whether the stored signature already matched the current filesystem scan.
+    var signatureUnchanged: Bool
+
+    /// Structural filesystem changes detected before reconciliation.
+    var changes: SyncChanges
+
     /// Relative paths for entries that still need descriptions after sync handling.
     var missingDescriptions: [String]
+}
+
+/// Structural filesystem changes detected during sync.
+struct SyncChanges {
+    /// Paths present in the current filesystem but absent from stored documentation.
+    var addedPaths: [String]
+
+    /// Paths present in stored documentation but absent from the current filesystem.
+    var removedPaths: [String]
+
+    /// Paths whose stored file-or-directory kind differs from the current filesystem.
+    var changedTypePaths: [String]
 }
 
 /// Coordinates repository scanning, state storage, rendering, and tree mutations.
@@ -168,6 +186,11 @@ struct TreedocsService {
         let current = try store.load(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let changes = SyncChanges(
+            addedPaths: TreeOperations.missingPaths(stored: current.tree, scanned: scan.tree),
+            removedPaths: TreeOperations.extraPaths(stored: current.tree, scanned: scan.tree),
+            changedTypePaths: TreeOperations.changedPaths(stored: current.tree, scanned: scan.tree)
+        )
         var merged = TreedocsFile(
             project: current.project,
             overrides: current.overrides,
@@ -186,13 +209,25 @@ struct TreedocsService {
                 case let .save(descriptions):
                     TreeOperations.applyDescriptions(descriptions, to: &merged.tree)
                 case .cancel:
-                    return SyncResult(file: current, saved: false, missingDescriptions: TreeOperations.missingDescriptionPaths(in: current.tree))
+                    return SyncResult(
+                        file: current,
+                        saved: false,
+                        signatureUnchanged: current.signature == scan.signature,
+                        changes: changes,
+                        missingDescriptions: TreeOperations.missingDescriptionPaths(in: current.tree)
+                    )
                 }
             }
         }
 
         try store.save(merged, at: repositoryPaths.stateFile)
-        return SyncResult(file: merged, saved: true, missingDescriptions: TreeOperations.missingDescriptionPaths(in: merged.tree))
+        return SyncResult(
+            file: merged,
+            saved: true,
+            signatureUnchanged: current.signature == scan.signature,
+            changes: changes,
+            missingDescriptions: TreeOperations.missingDescriptionPaths(in: merged.tree)
+        )
     }
 
     private func missingDescriptionCandidates(in tree: [String: TreeEntry]) throws -> [MissingDescriptionCandidate] {

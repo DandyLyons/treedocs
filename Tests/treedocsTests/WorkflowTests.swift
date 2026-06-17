@@ -31,10 +31,21 @@ struct WorkflowTests {
         try workspace.writeFile("Sources/New.swift", contents: "print(\"new\")")
         try workspace.remove("Sources/App.swift")
 
-        let synced = try service.sync(at: workspace.root.string, interactive: false)
-        #expect(TreeOperations.entry(at: "README.md", in: synced.tree)?.description == "Project readme")
-        #expect(TreeOperations.entry(at: "Sources/New.swift", in: synced.tree)?.description == "")
-        #expect(TreeOperations.entry(at: "Sources/App.swift", in: synced.tree) == nil)
+        let result = try service.syncResult(at: workspace.root.string, interactive: false)
+        #expect(!result.signatureUnchanged)
+        #expect(result.changes.addedPaths == ["Sources/New.swift"])
+        #expect(result.changes.removedPaths == ["Sources/App.swift"])
+        #expect(result.changes.changedTypePaths.isEmpty)
+        withRainbowConsoleOutput {
+            #expect(SyncCommand.changeSummaryMessages(for: result.changes) == [
+                "Changes found:".blue,
+                "\("+".green) Added: 1 (Sources/New.swift)",
+                "\("-".red) Removed: 1 (Sources/App.swift)",
+            ])
+        }
+        #expect(TreeOperations.entry(at: "README.md", in: result.file.tree)?.description == "Project readme")
+        #expect(TreeOperations.entry(at: "Sources/New.swift", in: result.file.tree)?.description == "")
+        #expect(TreeOperations.entry(at: "Sources/App.swift", in: result.file.tree) == nil)
     }
 
     @Test
@@ -234,15 +245,21 @@ struct WorkflowTests {
         let result = try service.syncResult(at: workspace.root.string, interactive: false)
 
         #expect(result.saved)
+        #expect(result.signatureUnchanged)
         #expect(result.missingDescriptions == ["README.md", "Sources", "Sources/App.swift"])
-        #expect(SyncCommand.remainingIssueMessages(missingDescriptions: result.missingDescriptions) == [
-            "Missing descriptions:",
-            "- README.md",
-            "- Sources",
-            "- Sources/App.swift",
-            "Next steps:",
-            "- \(CheckCommand.missingDescriptionNextStep)",
-        ])
+        withRainbowConsoleOutput {
+            #expect(SyncCommand.noChangeMessage() == "No change found.".green)
+        }
+        withRainbowConsoleOutput {
+            #expect(SyncCommand.remainingIssueMessages(missingDescriptions: result.missingDescriptions) == [
+                "Missing descriptions:".blue,
+                "- README.md",
+                "- Sources",
+                "- Sources/App.swift",
+                "Next steps:".blue,
+                "- \(CheckCommand.missingDescriptionNextStep)",
+            ])
+        }
     }
 
     @Test
