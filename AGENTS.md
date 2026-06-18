@@ -19,6 +19,8 @@ treedocs --help # shows root command help
 treedocs init # initializes treedocs.yaml
 treedocs sync # syncs treedocs.yaml with filesystem changes
 treedocs show . # shows the documentation tree for the current directory
+treedocs explore . # Shows only top-level files and folders with descriptions. 
+treedocs explore ./subfolder ./subfolder2 # The subfolders are expanded while all other folders are collapsed.
 swift test
 swift test --filter "Workflow"
 swift test --filter "Schema and Config"
@@ -35,7 +37,7 @@ swift test --filter "IgnoreMatcher"
 
 ## Codebase Exploration
 - On this computer, `treedocs` is symlinked to the debug binary produced by `swift build`, so `treedocs` is equivalent to `swift run treedocs`. Prefer running `treedocs` directly instead of `swift run treedocs`.
-- When you need to explore or understand the codebase, run `treedocs` first. It immediately generates a tree explanation of the repository's files and folders.
+- When you need to explore or understand the codebase, run `treedocs explore` first. It immediately generates a tree explanation of the repository's files and folders.
   - Tip: Use `treedocs show <path>` to focus on a specific subtree
 
 ## Architecture

@@ -89,9 +89,10 @@ struct TreeRenderer {
             }
         }
 
+        let explorationHint = "Expand collapsed folders with `treedocs explore <subpath> [subpath ...]`."
         var flattened = [RenderRow(
-            label: "Expand collapsed folders with `treedocs explore <subpath>`.",
-            visibleLabelLength: "Expand collapsed folders with `treedocs explore <subpath>`.".count,
+            label: explorationHint.bit8(67),
+            visibleLabelLength: explorationHint.count,
             description: nil
         )]
         flattened.append(rootRow(label: ".", entry: nil, path: "", config: config, statusOverrides: statusOverrides))

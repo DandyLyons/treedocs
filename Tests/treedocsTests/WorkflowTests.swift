@@ -728,7 +728,7 @@ struct WorkflowTests {
         )
 
         #expect(rendered == """
-        Expand collapsed folders with `treedocs explore <subpath>`.
+        \("Expand collapsed folders with `treedocs explore <subpath> [subpath ...]`.".bit8(67))
         \(".".green.bold)
         ├── \("Docs/".green.bold) \("(0 items)".lightBlack)  Documentation
         ├── \("README.md".green.bold)  Project readme
@@ -753,7 +753,7 @@ struct WorkflowTests {
         #expect(rendered.contains("│   ├── \("Support/".green.bold) \("(0 items)".lightBlack)  Shared helpers"))
         #expect(rendered.contains("│   ├── \("TreeDocs.swift".green.bold)  Entry point"))
         #expect(rendered.contains("│   └── \("treedocs/".green.bold) \("(2 items)".lightBlack)  Executable target"))
-        #expect(rendered.contains("Expand collapsed folders with `treedocs explore <subpath>`."))
+        #expect(rendered.contains("Expand collapsed folders with `treedocs explore <subpath> [subpath ...]`.".bit8(67)))
         #expect(!rendered.contains("run `treedocs explore Sources/treedocs` to expand"))
         #expect(rendered.contains("    └── \("WorkflowTests.swift".green.bold)  Workflow tests"))
         #expect(!rendered.contains("ExploreCommand.swift"))
