@@ -13,6 +13,7 @@ The CLI currently takes advantage of these schema fields:
 - `_doc`: directory documentation parsed, rendered, preserved, and updated through the tree model.
 - `_link`: set and cleared by `update`, resolved by `show` and `inspect`, and surfaced in tree output.
 - `references`: set and removed by `update`, shown by `inspect`, preserved by `sync`, and marked in tree output with `[ref]`.
+- `_` descriptions: reserved as the intentional-blank description sentinel. This is already schema-valid in `0.1.0` because descriptions are strings, but formal schema documentation is planned for `0.2.0-WIP`.
 - `overrides.exclude`: contributes scanner ignore patterns.
 - `overrides.use_gitignore`: controls whether `.gitignore` contributes scanner ignore patterns.
 - `overrides.max_description_length`: controls rendered description truncation.
@@ -44,3 +45,14 @@ The schema and model support these fields, but the CLI does not currently take a
 ## Validation Note
 
 `TreedocsFileStore.save` validates the written `treedocs.yaml` against the canonical schema after saving. This prevents CLI mutations from silently producing schema-invalid state, such as invalid reference formats.
+
+## Intentional Blank Descriptions
+
+The exact description string `_` is reserved to mean that a path is intentionally left undescribed. This lets users document that a missing description is deliberate, for example when a filename or path is already self-explanatory.
+
+```yaml
+tree:
+  Package.swift: _
+```
+
+This convention is compatible with schema `0.1.0` because string descriptions are already valid. The canonical schema should document the convention formally starting with `0.2.0-WIP`. Empty strings should continue to mean that a description is missing.
