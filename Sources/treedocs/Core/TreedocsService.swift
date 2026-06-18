@@ -58,6 +58,16 @@ struct CheckReport {
     var shouldFail: Bool {
         hasIssues && severity == .error
     }
+
+    /// Whether issues require reconciling `treedocs.yaml` with the filesystem before filling descriptions.
+    var requiresSyncBeforeFill: Bool {
+        !schemaErrors.isEmpty
+            || hasSignatureDrift
+            || !missingPaths.isEmpty
+            || !extraPaths.isEmpty
+            || !changedPaths.isEmpty
+            || !shadowedPaths.isEmpty
+    }
 }
 
 /// Describes a single inspected tree entry and any resolved linked content.
@@ -560,9 +570,17 @@ struct TreedocsService {
     /// - Returns: A prompt that instructs an assistant how to fill missing descriptions safely.
     /// - Throws: `TreeDocsError` when the repository path or state file is missing.
     func fillPrompt(at rootPath: String) throws -> String {
-        let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
-        _ = try store.load(at: repositoryPaths.stateFile)
-        return """
+        let report = try check(at: rootPath)
+        if report.requiresSyncBeforeFill {
+            return syncFirstPrompt(for: report)
+        }
+
+        return fillPrompt(for: report)
+    }
+
+    private func fillPrompt(for report: CheckReport) -> String {
+        var sections = [
+            """
         Fill missing descriptions in `treedocs.yaml` for this repository.
 
         Instructions:
@@ -573,6 +591,57 @@ struct TreedocsService {
         - Update `treedocs.yaml` only after unclear details have been resolved or explicitly marked as needing user input.
         - Keep the result valid against `site/schemas/0.1.0/treedocs.schema.json`.
         """
+        ]
+
+        if report.missingDescriptions.isEmpty {
+            sections.append("""
+
+        Check results:
+        - No missing descriptions were reported by `treedocs check`.
+        """)
+        } else {
+            sections.append(listSection(
+                title: "Paths needing descriptions from `treedocs check`:",
+                values: report.missingDescriptions
+            ))
+        }
+
+        return sections.joined(separator: "\n")
+    }
+
+    private func syncFirstPrompt(for report: CheckReport) -> String {
+        var sections = [
+            """
+        `treedocs check` reported structural issues in `treedocs.yaml`.
+
+        Run `treedocs sync` first to reconcile filesystem changes, then run `treedocs prompts fill` again.
+        """
+        ]
+
+        appendListSection(title: "Schema validation failures:", values: report.schemaErrors, to: &sections)
+        if report.hasSignatureDrift {
+            sections.append("""
+
+        Stale tree:
+        - Stored signature \(report.storedSignature ?? "<missing>") does not match current signature \(report.currentSignature)
+        """)
+        }
+        appendListSection(title: "Missing paths:", values: report.missingPaths, to: &sections)
+        appendListSection(title: "Extra documented paths:", values: report.extraPaths, to: &sections)
+        appendListSection(title: "Changed paths:", values: report.changedPaths, to: &sections)
+        appendListSection(title: "Shadowed child-owned paths:", values: report.shadowedPaths, to: &sections)
+        appendListSection(title: "Missing descriptions to fill after sync:", values: report.missingDescriptions, to: &sections)
+
+        return sections.joined(separator: "\n")
+    }
+
+    private func appendListSection(title: String, values: [String], to sections: inout [String]) {
+        guard !values.isEmpty else { return }
+        sections.append(listSection(title: title, values: values))
+    }
+
+    private func listSection(title: String, values: [String]) -> String {
+        (["", title] + values.sorted().map { "- \($0)" }).joined(separator: "\n")
     }
 
     /// Finds the first documented path matching a query.

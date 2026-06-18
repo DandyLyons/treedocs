@@ -929,8 +929,9 @@ struct WorkflowTests {
         ])
 
         let prompt = try service.fillPrompt(at: workspace.root.string)
-        #expect(prompt.contains("Fill missing descriptions"))
-        #expect(prompt.contains("site/schemas/0.1.0/treedocs.schema.json"))
+        #expect(prompt.contains("Run `treedocs sync` first"))
+        #expect(prompt.contains("Stale tree:"))
+        #expect(prompt.contains("Vendor/Plugin"))
     }
 
     @Test
@@ -945,7 +946,27 @@ struct WorkflowTests {
 
         let after = try (workspace.root + Path("treedocs.yaml")).read()
         #expect(prompt.contains("Ask clarifying questions for unclear paths"))
+        #expect(prompt.contains("Paths needing descriptions from `treedocs check`:"))
+        #expect(prompt.contains("- README.md"))
         #expect(after == before)
+    }
+
+    @Test
+    func `Fill prompt recommends sync before structural drift fixes`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+
+        try workspace.writeFile("Sources/App.swift", contents: "print(\"hi\")")
+
+        let prompt = try service.fillPrompt(at: workspace.root.string)
+
+        #expect(prompt.contains("`treedocs check` reported structural issues"))
+        #expect(prompt.contains("Run `treedocs sync` first"))
+        #expect(prompt.contains("Missing paths:"))
+        #expect(prompt.contains("- Sources"))
+        #expect(prompt.contains("- Sources/App.swift"))
     }
 
     private func explorationFixtureTree() -> [String: TreeEntry] {
