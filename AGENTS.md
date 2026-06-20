@@ -40,6 +40,9 @@ swift test --filter "IgnoreMatcher"
 - When you need to explore or understand the codebase, run `treedocs explore` first. It immediately generates a tree explanation of the repository's files and folders.
   - Tip: Use `treedocs show <path>` to focus on a specific subtree
 
+## Path Conventions
+- Use explicit trailing slashes for all paths that refer to directories, including examples, documentation, config snippets, and CLI help text. Bare `.`, `..`, and `~` are exceptions and do not need trailing slashes.
+
 ## Architecture
 - Executable entry point: `Sources/treedocs/TreeDocs.swift`
 - CLI commands live in `Sources/treedocs/Commands/`
