@@ -2,6 +2,8 @@
 
 Create and maintain a repository map with the `treedocs` command-line interface.
 
+`treedocs` has a sister tool, [`md-utils`](https://github.com/DandyLyons/md-utils), for Markdown parsing, querying, and rewriting. Future integration is planned so repository maps from `treedocs` can work more directly with Markdown operations from `md-utils`.
+
 ## Initialize a Repository
 
 Run `init` from a repository root to scan the filesystem and create `treedocs.yaml`:
