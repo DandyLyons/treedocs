@@ -4,11 +4,6 @@
 
 `treedocs` is a Swift CLI that keeps a version-controlled architectural map of a repository in `treedocs.yaml`. It mirrors the filesystem, stores human-readable descriptions, and helps detect documentation drift.
 
-## Sister Tool
-[`md-utils`](https://github.com/DandyLyons/md-utils) is a sister project maintained and designed by the same author. Where `treedocs` tracks repository structure and path-level documentation, `md-utils` provides a Swift library, CLI, and Agent Skill for parsing, querying, and rewriting Markdown files.
-
-The two tools are designed to complement each other, and planned integration will connect `treedocs` repository maps with `md-utils` Markdown operations.
-
 ## What It Does
 - Scans a repository into a nested YAML tree
 - Treats nested `treedocs.yaml` files as documentation boundaries for delegated subtrees
@@ -236,3 +231,8 @@ Source layout:
 - `Sources/treedocs/Core/`: services and filesystem logic
 - `Sources/treedocs/Models/`: YAML and config models
 - `Tests/treedocsTests/`: Swift Testing suites
+
+## md-utils
+[`md-utils`](https://github.com/DandyLyons/md-utils) is a sister project maintained and designed by the same author. Where `treedocs` tracks repository structure and path-level documentation, `md-utils` provides a Swift library, CLI, and Agent Skill for parsing, querying, and rewriting Markdown files.
+
+The two tools are designed to complement each other, and planned integration will connect `treedocs` repository maps with `md-utils` Markdown operations.
