@@ -3,7 +3,7 @@ import ArgumentParser
 /// Shared CLI release metadata.
 enum TreeDocsVersion {
     /// The treedocs executable version, distinct from `schema_version` and `project.version`.
-    static let current = "0.1.0"
+    static let current = "0.2.0"
 }
 
 /// Defines the root `treedocs` command.

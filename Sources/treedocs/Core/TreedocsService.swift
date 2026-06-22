@@ -8,6 +8,9 @@ import Rainbow
 /// and records schema failures, structural drift, nested boundaries, and incomplete descriptions.
 /// Commands use `severity` to decide whether reported issues should fail the process.
 struct CheckReport {
+    /// Non-fatal schema warnings, such as deprecated supported schema versions.
+    var schemaWarnings: [String]
+
     /// JSON Schema validation errors for `treedocs.yaml`.
     var schemaErrors: [String]
 
@@ -202,6 +205,7 @@ struct TreedocsService {
             changedTypePaths: TreeOperations.changedPaths(stored: current.tree, scanned: scan.tree)
         )
         var merged = TreedocsFile(
+            schemaVersion: current.schemaVersion,
             project: current.project,
             overrides: current.overrides,
             signature: scan.signature,
@@ -269,6 +273,7 @@ struct TreedocsService {
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
         let missingDescriptions = TreeOperations.missingDescriptionPaths(in: current.tree)
         return CheckReport(
+            schemaWarnings: TreedocsSchemaMetadata.deprecationWarnings(for: current.schemaVersion),
             schemaErrors: schemaErrors,
             storedSignature: current.signature,
             currentSignature: scan.signature,
@@ -589,7 +594,7 @@ struct TreedocsService {
         - Fill missing descriptions with concise, accurate explanations based on source files, neighboring paths, names, imports, tests, and documentation.
         - Ask clarifying questions for unclear paths instead of inventing uncertain descriptions.
         - Update `treedocs.yaml` only after unclear details have been resolved or explicitly marked as needing user input.
-        - Keep the result valid against `site/schemas/0.1.0/treedocs.schema.json`.
+        - Keep the result valid against `site/schemas/\(TreedocsSchemaMetadata.currentVersion)/treedocs.schema.json`.
         """
         ]
 

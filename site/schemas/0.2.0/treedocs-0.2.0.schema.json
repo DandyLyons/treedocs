@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dandylyons.github.io/treedocs/schemas/0.2.0/treedocs.schema.json",
+  "title": "treedocs.yaml",
+  "description": "Schema for the YAML repository documentation state maintained by treedocs.",
+  "markdownDescription": "Schema for `treedocs.yaml`, the repository documentation state maintained by the `treedocs` CLI. Schema `0.2.0` reserves underscore-prefixed metadata keys inside `tree`: `_doc`, `_link`, `_description`, and `_references`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "signature", "tree"],
+  "defaultSnippets": [
+    {
+      "label": "treedocs.yaml",
+      "description": "Create a minimal treedocs.yaml document.",
+      "body": {
+        "schema_version": "0.2.0",
+        "project": {
+          "name": "${1:project-name}",
+          "version": "0.0.0",
+          "last_updated": "${2:YYYY-MM-DD}"
+        },
+        "signature": "sha256:${3:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}",
+        "tree": {}
+      }
+    }
+  ],
+  "properties": {
+    "schema_version": {
+      "title": "Schema Version",
+      "type": "string",
+      "enum": ["0.2.0"],
+      "default": "0.2.0",
+      "description": "The treedocs.yaml file-format schema version. This is distinct from project.version.",
+      "markdownDescription": "The `treedocs.yaml` file-format schema version. Use `0.2.0` for files using `_description` and `_references`. This is distinct from `project.version`.",
+      "examples": ["0.2.0"]
+    },
+    "project": {
+      "$ref": "#/$defs/project"
+    },
+    "overrides": {
+      "$ref": "#/$defs/overrides"
+    },
+    "signature": {
+      "title": "Filesystem Signature",
+      "type": "string",
+      "pattern": "^sha256:[A-Fa-f0-9]{64}$",
+      "description": "Deterministic SHA-256 structural hash of the scanned tree. treedocs updates this value during init, sync, and update.",
+      "markdownDescription": "Deterministic SHA-256 structural hash of the scanned tree. The CLI updates this during `treedocs init`, `treedocs sync`, and `treedocs update`.",
+      "examples": ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+    },
+    "tree": {
+      "title": "Documentation Tree",
+      "type": "object",
+      "description": "Nested filesystem mirror keyed by repository-relative path components or relative path strings.",
+      "markdownDescription": "Nested filesystem mirror keyed by repository-relative path components or relative path strings. Inside tree entries, underscore-prefixed keys are reserved treedocs metadata; normal keys represent filesystem entries.",
+      "default": {},
+      "examples": [
+        {
+          "README.md": "Project overview",
+          "Sources": {
+            "_doc": "Source files",
+            "main.swift": "CLI entry point"
+          }
+        }
+      ],
+      "additionalProperties": {
+        "$ref": "#/$defs/treeEntry"
+      }
+    }
+  },
+  "$defs": {
+    "project": {
+      "title": "Project Metadata",
+      "type": "object",
+      "description": "Repository metadata stored in treedocs.yaml.",
+      "markdownDescription": "Repository metadata stored in `treedocs.yaml`. `project.version` describes the documented project, not the treedocs schema version.",
+      "required": ["name", "version", "last_updated"],
+      "properties": {
+        "name": {
+          "title": "Project Name",
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable project name.",
+          "examples": ["treedocs"]
+        },
+        "version": {
+          "title": "Project Version",
+          "type": "string",
+          "minLength": 1,
+          "description": "Version of the documented project. This is not the treedocs.yaml schema version.",
+          "examples": ["0.2.0", "1.0.0"]
+        },
+        "last_updated": {
+          "title": "Last Updated",
+          "type": "string",
+          "format": "date",
+          "description": "Date this treedocs state was initialized or last intentionally refreshed, formatted as YYYY-MM-DD.",
+          "examples": ["2026-06-22"]
+        }
+      },
+      "additionalProperties": {
+        "type": "string",
+        "description": "Additional project metadata preserved by treedocs. Values must be strings."
+      }
+    },
+    "overrides": {
+      "title": "Configuration Overrides",
+      "type": "object",
+      "description": "Project-local configuration overrides stored in treedocs.yaml.",
+      "markdownDescription": "Project-local configuration overrides. These override built-in defaults and external `.treedocs/config.yaml` settings when the CLI loads this state file.",
+      "additionalProperties": false,
+      "properties": {
+        "exclude": {
+          "title": "Exclude Patterns",
+          "type": "array",
+          "description": "Ignore patterns applied while scanning the repository.",
+          "markdownDescription": "Ignore patterns applied while scanning. Patterns are merged with standard excludes, `.gitignore`, and `.treedocs/.treedocs_ignore`.",
+          "items": {
+            "type": "string",
+            "examples": ["Generated", "*.xcuserstate", "build/"]
+          },
+          "default": []
+        },
+        "use_gitignore": {
+          "title": "Use .gitignore",
+          "type": "boolean",
+          "description": "Whether scanner ignore behavior includes patterns from .gitignore.",
+          "default": true
+        },
+        "max_description_length": {
+          "title": "Maximum Description Length",
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum rendered description length before truncation. Use 0 to disable truncation.",
+          "default": 120
+        },
+        "indent_size": {
+          "title": "Indent Size",
+          "type": "integer",
+          "minimum": 0,
+          "description": "Reserved indentation setting parsed and preserved by the CLI.",
+          "default": 2
+        },
+        "align_columns": {
+          "title": "Align Columns",
+          "type": "boolean",
+          "description": "Whether renderers should align description columns when supported.",
+          "default": false
+        },
+        "check_severity": {
+          "title": "Check Severity",
+          "type": "string",
+          "enum": ["error", "warn"],
+          "enumDescriptions": [
+            "treedocs check exits non-zero when it finds issues.",
+            "treedocs check reports issues without failing the process."
+          ],
+          "description": "Controls whether treedocs check issues fail or warn.",
+          "default": "error"
+        },
+        "auto_init_empty": {
+          "title": "Auto Init Empty Repositories",
+          "type": "boolean",
+          "description": "Reserved setting parsed and preserved by the CLI.",
+          "default": false
+        },
+        "theme": {
+          "title": "Theme",
+          "type": "string",
+          "description": "Reserved renderer theme name parsed and preserved by the CLI.",
+          "examples": ["light", "dark"]
+        },
+        "icons": {
+          "title": "Icons",
+          "type": "boolean",
+          "description": "Reserved renderer icon setting parsed and preserved by the CLI.",
+          "default": false
+        },
+        "ai_provider": {
+          "title": "AI Provider",
+          "type": "string",
+          "description": "Reserved AI provider identifier parsed and preserved by the CLI.",
+          "examples": ["openai", "anthropic"]
+        },
+        "ai_model": {
+          "title": "AI Model",
+          "type": "string",
+          "description": "Reserved AI model identifier parsed and preserved by the CLI.",
+          "examples": ["gpt-5.5", "claude-sonnet-4-5"]
+        }
+      }
+    },
+    "entryDocumentation": {
+      "title": "Entry Documentation",
+      "description": "Documentation can be a compact description string or an object with _description and _references metadata.",
+      "markdownDescription": "Documentation can be a compact description string or an object with `_description` and `_references` metadata. Use object form when references are needed.",
+      "oneOf": [
+        {
+          "title": "Compact Description",
+          "type": "string",
+          "description": "Simple human-readable description for a file or directory.",
+          "examples": ["Project overview", "Source files"]
+        },
+        {
+          "title": "Structured Documentation",
+          "type": "object",
+          "additionalProperties": false,
+          "defaultSnippets": [
+            {
+              "label": "description with references",
+              "body": {
+                "_description": "${1:Description}",
+                "_references": ["${2:DOCS/Reference.md}"]
+              }
+            }
+          ],
+          "properties": {
+            "_description": {
+              "$ref": "#/$defs/description"
+            },
+            "_references": {
+              "$ref": "#/$defs/references"
+            }
+          }
+        }
+      ]
+    },
+    "description": {
+      "title": "Description",
+      "type": "string",
+      "description": "Human-readable documentation for a tree entry.",
+      "markdownDescription": "Human-readable documentation for a tree entry. Empty strings mean the description is still missing; `_` may be used as an intentional blank sentinel.",
+      "examples": ["Project overview", "CLI commands", "_"]
+    },
+    "references": {
+      "title": "References",
+      "type": "array",
+      "description": "Supplementary documentation references for a tree entry.",
+      "markdownDescription": "Supplementary documentation references. Each item can be a repository-local path, an HTTPS URL, or a Markdown link to either.",
+      "items": {
+        "$ref": "#/$defs/reference"
+      },
+      "examples": [["DOCS/Architecture.md", "https://example.com/reference"]]
+    },
+    "reference": {
+      "title": "Reference",
+      "description": "Supplementary documentation reference: a local path, an HTTPS URL, or a markdown link to either.",
+      "oneOf": [
+        {
+          "title": "Local Path Reference",
+          "type": "string",
+          "description": "Repository-local path reference.",
+          "pattern": "^(?!\\[)(?![A-Za-z][A-Za-z0-9+.-]*:)(?=.*\\S)[^\\n]+$",
+          "examples": ["DOCS/Architecture.md", "README.md"]
+        },
+        {
+          "title": "HTTPS Reference",
+          "type": "string",
+          "description": "HTTPS URL reference.",
+          "pattern": "^https://\\S+$",
+          "examples": ["https://example.com/reference"]
+        },
+        {
+          "title": "Markdown Link Reference",
+          "type": "string",
+          "description": "Markdown link whose target is a local path or HTTPS URL.",
+          "pattern": "^\\[[^\\]\\n]+\\]\\((?:https://\\S+|(?!(?:[A-Za-z][A-Za-z0-9+.-]*:))(?=.*\\S)[^)\\n]+)\\)$",
+          "examples": ["[Architecture](DOCS/Architecture.md)", "[External reference](https://example.com/reference)"]
+        }
+      ]
+    },
+    "treeEntry": {
+      "title": "Tree Entry",
+      "description": "A documented file or directory path. Strings are simple descriptions; objects may contain underscore-prefixed metadata, links, and nested children.",
+      "markdownDescription": "A documented file or directory path. Strings are simple descriptions. Objects may contain reserved metadata keys (`_doc`, `_link`, `_description`, `_references`) and normal child keys for filesystem entries. In schema `0.2.0`, `description` and `references` are normal child names, not metadata.",
+      "oneOf": [
+        {
+          "title": "Compact File Description",
+          "type": "string",
+          "description": "Simple description for a leaf file entry.",
+          "examples": ["Project overview", "Package manifest"]
+        },
+        {
+          "title": "Structured File or Directory Entry",
+          "type": "object",
+          "defaultSnippets": [
+            {
+              "label": "documented file with references",
+              "body": {
+                "_description": "${1:Description}",
+                "_references": ["${2:DOCS/Reference.md}"]
+              }
+            },
+            {
+              "label": "documented directory",
+              "body": {
+                "_doc": "${1:Directory description}",
+                "${2:child.md}": "${3:Child description}"
+              }
+            },
+            {
+              "label": "linked entry",
+              "body": {
+                "_description": "${1:Alias description}",
+                "_link": "${2:target/path}"
+              }
+            }
+          ],
+          "properties": {
+            "_description": {
+              "$ref": "#/$defs/description"
+            },
+            "_references": {
+              "$ref": "#/$defs/references"
+            },
+            "_doc": {
+              "title": "Directory Documentation",
+              "description": "Documentation for this directory entry.",
+              "markdownDescription": "Documentation for this directory entry. Use compact string form for only a description, or object form with `_description` and `_references` when references are needed.",
+              "$ref": "#/$defs/entryDocumentation"
+            },
+            "_link": {
+              "title": "Link Target",
+              "type": "string",
+              "minLength": 1,
+              "description": "Alias target for this entry. Use a documented tree path, relative path, or external URL.",
+              "markdownDescription": "Alias target for this entry. The CLI resolves internal `_link` targets against documented tree paths and reports broken or cyclic links.",
+              "examples": ["Sources/treedocs", "../README.md", "https://example.com"]
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/treeEntry"
+          }
+        }
+      ]
+    }
+  }
+}

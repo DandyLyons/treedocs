@@ -1,6 +1,6 @@
 # treedocs Schema CLI Usage
 
-This note summarizes which parts of `site/schemas/0.1.0/treedocs.schema.json` are currently used by the CLI and which parts are parsed or preserved but not yet meaningfully exposed.
+This note summarizes which parts of `site/schemas/0.2.0/treedocs.schema.json` are currently used by the CLI and which parts are parsed or preserved but not yet meaningfully exposed.
 
 ## Actively Used
 
@@ -9,11 +9,11 @@ The CLI currently takes advantage of these schema fields:
 - `project.name`: written by `treedocs init`.
 - `signature`: written by `init`, `sync`, and `update`; checked by `check` and `show` drift warnings.
 - `tree`: core documentation state used by all tree-oriented commands.
-- `description`: rendered by `show`/`ls`, searched by `path`, updated by `update`, checked for missing documentation by `check` and interactive `sync`.
+- `_description`: rendered by `show`/`ls`, searched by `path`, updated by `update`, checked for missing documentation by `check` and interactive `sync`.
 - `_doc`: directory documentation parsed, rendered, preserved, and updated through the tree model.
 - `_link`: set and cleared by `update`, resolved by `show` and `inspect`, and surfaced in tree output.
-- `references`: set and removed by `update`, shown by `inspect`, preserved by `sync`, and marked in tree output with `[ref]`.
-- `_` descriptions: reserved as the intentional-blank description sentinel. This is already schema-valid in `0.1.0` because descriptions are strings, but formal schema documentation is planned for `0.2.0-WIP`.
+- `_references`: set and removed by `update`, shown by `inspect`, preserved by `sync`, and marked in tree output with `[ref]`.
+- `_` descriptions: reserved as the intentional-blank description sentinel. This is schema-valid because compact string descriptions are valid.
 - `overrides.exclude`: contributes scanner ignore patterns.
 - `overrides.use_gitignore`: controls whether `.gitignore` contributes scanner ignore patterns.
 - `overrides.max_description_length`: controls rendered description truncation.
@@ -26,7 +26,7 @@ These schema features are supported, but only lightly:
 
 - `_link`: link resolution exists, but the schema only requires a non-empty string. Most link semantics are enforced by CLI behavior rather than schema validation.
 - Slash-separated tree keys: the loader accepts keys like `Sources/foo.swift`, but the writer normalizes state back into nested YAML. This is useful input compatibility, not a distinct CLI feature.
-- `references`: references are editable and displayable, but the CLI does not resolve, open, check existence, or search reference targets beyond schema validation.
+- `_references`: references are editable and displayable, but the CLI does not resolve, open, check existence, or search reference targets beyond schema validation.
 
 ## Not Currently Used
 
@@ -55,4 +55,4 @@ tree:
   Package.swift: _
 ```
 
-This convention is compatible with schema `0.1.0` because string descriptions are already valid. The canonical schema should document the convention formally starting with `0.2.0-WIP`. Empty strings should continue to mean that a description is missing.
+This convention is compatible with schema `0.2.0` because string descriptions are already valid. Empty strings should continue to mean that a description is missing.

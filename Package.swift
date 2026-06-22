@@ -30,7 +30,8 @@ let package = Package(
                 .product(name: "Rainbow", package: "Rainbow"),
             ],
             resources: [
-                .copy("../../site/schemas/0.1.0/treedocs.schema.json"),
+                .copy("../../site/schemas/0.1.0/treedocs-0.1.0.schema.json"),
+                .copy("../../site/schemas/0.2.0/treedocs-0.2.0.schema.json"),
                 .copy("Resources/descriptions-suggestions.yaml"),
             ]
         ),

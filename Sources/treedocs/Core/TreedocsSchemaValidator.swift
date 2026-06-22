@@ -78,8 +78,10 @@ struct TreedocsSchemaValidator {
 
     private func bundledSchemaResourceName(for version: String) throws -> String {
         switch version {
+        case TreedocsSchemaMetadata.v0_1_0:
+            return "treedocs-0.1.0.schema"
         case TreedocsSchemaMetadata.currentVersion:
-            return "treedocs.schema"
+            return "treedocs-0.2.0.schema"
         default:
             throw TreeDocsError.message(unsupportedSchemaVersionMessage(version))
         }

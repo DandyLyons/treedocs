@@ -18,7 +18,11 @@ struct TreedocsFileStore {
             throw TreeDocsError.message("Missing treedocs state file at \(path.string). Run `treedocs init` first.")
         }
         try validator.validateFile(at: path)
-        return try loadWithoutSchemaValidation(at: path)
+        let file = try loadWithoutSchemaValidation(at: path)
+        for warning in TreedocsSchemaMetadata.deprecationWarnings(for: file.schemaVersion) {
+            fputs("Warning: \(warning)\n", stderr)
+        }
+        return file
     }
 
     /// Loads a treedocs state file without running JSON Schema validation.

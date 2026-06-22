@@ -1,10 +1,10 @@
-# yaml-language-server: $schema=https://dandylyons.github.io/treedocs/schemas/0.1.0/treedocs.schema.json
+# yaml-language-server: $schema=https://dandylyons.github.io/treedocs/schemas/0.2.0/treedocs.schema.json
 project:
   last_updated: '2026-05-08'
   name: treedocs
   version: 0.1.0
-schema_version: 0.1.0
-signature: sha256:36cd9c31e56ab1ce279921f6a6821a53574831c00c07d8d3ce0b97587955c32f
+schema_version: 0.2.0
+signature: sha256:02e78d9150f1b702c265114a8bd710afe083b3528fe58175bd16ebe10c01adda
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
@@ -20,10 +20,15 @@ tree:
     launch.json: Debug launch configurations for running treedocs from VS Code.
   AGENTS.md: Project instructions and operating notes for AI coding agents.
   DOCS:
+    Archive:
+      0.1.0 Initial Spec.md: Historical first-release design and implementation-tracking
+        draft retained for context; not the current normative spec.
+      _doc: Archived historical project documentation.
     Feature Idea - treedocs Git History.md: Brainstorming new features that we could
       add if treedocs inspected the git history and compared it to the treedocs.yaml
       over time.
-    InitialSpecs.md: Early product and behavior notes for the treedocs CLI.
+    Migrating treedocs.yaml 0.1.0 to 0.2.0.md: Migration guide for updating treedocs.yaml
+      files from schema 0.1.0 metadata keys to schema 0.2.0 metadata keys.
     Release Strategy.md: Documents CLI and JSON Schema release procedures, including
       GitHub Releases, Homebrew tap publishing, schema immutability, and GitHub Pages
       schema deployment.
@@ -130,8 +135,16 @@ tree:
     schemas:
       0.1.0:
         _doc: Immutable treedocs schema release 0.1.0.
+        treedocs-0.1.0.schema.json: Versioned resource copy of the 0.1.0 schema bundled
+          into the CLI for offline validation.
         treedocs.schema.json: Versioned canonical JSON Schema for treedocs.yaml release
           0.1.0.
+      0.2.0:
+        _doc: Immutable treedocs schema release 0.2.0.
+        treedocs-0.2.0.schema.json: Versioned resource copy of the 0.2.0 schema bundled
+          into the CLI for offline validation.
+        treedocs.schema.json: Versioned canonical JSON Schema for treedocs.yaml release
+          0.2.0.
       _doc: Public JSON Schema endpoints served by the GitHub Pages site.
     styles.css: Stylesheet for the treedocs GitHub Pages landing page.
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.

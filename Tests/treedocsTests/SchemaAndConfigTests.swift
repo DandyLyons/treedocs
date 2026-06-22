@@ -7,9 +7,9 @@ import Yams
 @Suite("Schema and Config")
 struct SchemaAndConfigTests {
     @Test
-    func `Canonical schema accepts InitialSpecs section 3_5 example`() throws {
+    func `Canonical schema accepts current metadata keys`() throws {
         let yaml = """
-        schema_version: "0.1.0"
+        schema_version: "0.2.0"
         project:
           name: "ScraperBot"
           version: "2.1.0"
@@ -26,8 +26,8 @@ struct SchemaAndConfigTests {
               auth.py: "Handles JWT validation and user sessions"
           Database:
             _doc:
-              description: "Data persistence layer and migration scripts"
-              references:
+              _description: "Data persistence layer and migration scripts"
+              _references:
                 - "DOCS/Database.md"
                 - "DOCS/Schema.md"
                 - "https://wiki.internal.com/db-standards"
@@ -76,7 +76,7 @@ struct SchemaAndConfigTests {
             Issue.record("Expected unsupported schema_version to fail")
         } catch {
             #expect(error.localizedDescription.contains("Unsupported treedocs.yaml schema_version \"99.0.0\""))
-            #expect(error.localizedDescription.contains("This CLI supports: 0.1.0"))
+            #expect(error.localizedDescription.contains("This CLI supports: 0.1.0, 0.2.0"))
         }
     }
 
@@ -84,7 +84,7 @@ struct SchemaAndConfigTests {
     func `Store rejects invalid schema fixture with field path`() throws {
         let workspace = try TestWorkspace()
         try workspace.writeFile("treedocs.yaml", contents: """
-        schema_version: "0.1.0"
+        schema_version: "0.2.0"
         project:
           name: Example
           version: "1.0.0"
@@ -142,7 +142,7 @@ struct SchemaAndConfigTests {
         let service = try workspace.service()
         try workspace.writeFile("README.md", contents: "# Demo")
         _ = try service.initialize(at: workspace.root.string, force: false)
-        try workspace.writeFile("site/schemas/0.1.0/treedocs.schema.json", contents: "not json")
+        try workspace.writeFile("site/schemas/0.2.0/treedocs.schema.json", contents: "not json")
 
         try TreedocsSchemaValidator().validateFile(at: workspace.root + Path("treedocs.yaml"))
     }
@@ -189,7 +189,7 @@ struct SchemaAndConfigTests {
             try workspace.saveState(file)
             Issue.record("Expected save to reject schema-invalid references")
         } catch {
-            #expect(error.localizedDescription.contains("#/tree/README.md/references/0"))
+            #expect(error.localizedDescription.contains("#/tree/README.md/_references/0"))
         }
     }
 
@@ -198,7 +198,7 @@ struct SchemaAndConfigTests {
         let workspace = try TestWorkspace()
         try workspace.writeFile("treedocs.yaml", contents: """
         # Root-level comment that should not survive serialization.
-        schema_version: "0.1.0"
+        schema_version: "0.2.0"
         project:
           name: Example
           version: "1.0.0"
@@ -207,8 +207,8 @@ struct SchemaAndConfigTests {
         tree:
           README.md:
             # Inline note that belongs in references instead.
-            description: Project readme
-            references:
+            _description: Project readme
+            _references:
               - DOCS/README.md
         """)
 
@@ -226,6 +226,35 @@ struct SchemaAndConfigTests {
     }
 
     @Test
+    func `Store preserves 0_1 metadata keys when mutating 0_1 files`() throws {
+        let workspace = try TestWorkspace()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        try workspace.writeFile("treedocs.yaml", contents: """
+        schema_version: "0.1.0"
+        project:
+          name: Example
+          version: "1.0.0"
+          last_updated: "2026-06-13"
+        signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        tree:
+          README.md:
+            description: Project readme
+            references:
+              - DOCS/README.md
+        """)
+
+        var loaded = try workspace.loadState()
+        loaded.tree["Package.swift"] = TreeEntry(description: "Package manifest", references: ["DOCS/Package.md"])
+        try workspace.saveState(loaded)
+
+        let rewritten = try String(contentsOf: (workspace.root + Path("treedocs.yaml")).url, encoding: .utf8)
+        #expect(rewritten.contains("schema_version: 0.1.0"))
+        #expect(rewritten.contains("description: Package manifest"))
+        #expect(rewritten.contains("references:"))
+        #expect(!rewritten.contains("_description: Package manifest"))
+    }
+
+    @Test
     func `YAML schema round-trips strings, objects, nested folders, links, and references`() throws {
         let yaml = """
         project:
@@ -238,8 +267,8 @@ struct SchemaAndConfigTests {
             _doc: Main source
             api:
               _doc:
-                description: REST API
-                references:
+                _description: REST API
+                _references:
                   - DOCS/API.md
               auth.swift: Handles auth
           docs:
@@ -247,8 +276,8 @@ struct SchemaAndConfigTests {
               _doc: Alias folder
               _link: src/api
           README.md:
-            description: Project entry point
-            references:
+            _description: Project entry point
+            _references:
               - https://example.com
         """
 
@@ -261,6 +290,35 @@ struct SchemaAndConfigTests {
 
         let roundTrip = try TreedocsFile.load(from: parsed.toYAMLString())
         #expect(roundTrip == parsed)
+    }
+
+    @Test
+    func `YAML schema 0_2 supports description and references directories`() throws {
+        let yaml = """
+        schema_version: "0.2.0"
+        project:
+          name: Example
+          version: "1.0.0"
+          last_updated: "2026-06-13"
+        signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        tree:
+          docs:
+            _doc: Documentation
+            description:
+              guide.md: Description guide
+            references:
+              api.md: API references
+            README.md:
+              _description: Docs readme
+              _references:
+                - DOCS/README.md
+        """
+
+        try TreedocsSchemaValidator().validate(yaml: yaml)
+        let parsed = try TreedocsFile.load(from: yaml)
+        #expect(TreeOperations.entry(at: "docs/description/guide.md", in: parsed.tree)?.description == "Description guide")
+        #expect(TreeOperations.entry(at: "docs/references/api.md", in: parsed.tree)?.description == "API references")
+        #expect(TreeOperations.entry(at: "docs/README.md", in: parsed.tree)?.references == ["DOCS/README.md"])
     }
 
     @Test
@@ -367,16 +425,16 @@ struct SchemaAndConfigTests {
         let doc = EntryDocumentation(description: "Hello", references: ["ref1", "ref2"])
         let value = doc.toYAMLValue() as? [String: Any]
         #expect(value != nil)
-        #expect(value?["description"] as? String == "Hello")
-        #expect(value?["references"] as? [String] == ["ref1", "ref2"])
+        #expect(value?["_description"] as? String == "Hello")
+        #expect(value?["_references"] as? [String] == ["ref1", "ref2"])
     }
 
     @Test
     func `EntryDocumentation with only references round-trips`() {
         let doc = EntryDocumentation(references: ["ref1"])
         let value = doc.toYAMLValue() as? [String: Any]
-        #expect(value?["description"] == nil)
-        #expect(value?["references"] as? [String] == ["ref1"])
+        #expect(value?["_description"] == nil)
+        #expect(value?["_references"] as? [String] == ["ref1"])
     }
 
     @Test
@@ -401,8 +459,8 @@ struct SchemaAndConfigTests {
     @Test
     func `EntryDocumentation fromYAML parses mapping`() throws {
         let yaml = """
-        description: API docs
-        references:
+        _description: API docs
+        _references:
           - docs/api.md
         """
         let parsed = try Yams.load(yaml: yaml)
@@ -428,7 +486,7 @@ struct SchemaAndConfigTests {
     @Test
     func `TreeEntry as mapping with description`() throws {
         let yaml = """
-        description: A file
+        _description: A file
         _link: somewhere
         """
         let parsed = try Yams.load(yaml: yaml)
@@ -463,7 +521,7 @@ struct SchemaAndConfigTests {
     func `TreeEntry toYAMLValue for leaf with link`() {
         let entry = TreeEntry(description: "Leaf", link: "target")
         let value = entry.toYAMLValue() as? [String: Any]
-        #expect(value?["description"] as? String == "Leaf")
+        #expect(value?["_description"] as? String == "Leaf")
         #expect(value?["_link"] as? String == "target")
     }
 

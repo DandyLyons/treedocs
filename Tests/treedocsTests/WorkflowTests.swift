@@ -326,6 +326,58 @@ struct WorkflowTests {
     }
 
     @Test
+    func `Check reports deprecated 0_1 schema warning without blocking mutation`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        var state = try workspace.loadState()
+        state.schemaVersion = "0.1.0"
+        state.tree["README.md"] = TreeEntry(description: "Project readme", references: ["DOCS/README.md"])
+        try workspace.saveState(state)
+
+        let report = try service.check(at: workspace.root.string)
+        #expect(report.schemaWarnings.contains { $0.contains("schema_version \"0.1.0\" is deprecated") })
+        #expect(!report.shouldFail)
+
+        _ = try service.update(
+            at: workspace.root.string,
+            path: "README.md",
+            description: "Updated readme",
+            addReferences: ["DOCS/Updated.md"],
+            removeReferences: [],
+            link: nil,
+            clearLink: false
+        )
+        let yaml = try String(contentsOf: (workspace.root + Path("treedocs.yaml")).url, encoding: .utf8)
+        #expect(yaml.contains("schema_version: 0.1.0"))
+        #expect(yaml.contains("description: Updated readme"))
+        #expect(yaml.contains("references:"))
+        #expect(!yaml.contains("_description: Updated readme"))
+    }
+
+    @Test
+    func `Sync preserves deprecated 0_1 schema version and metadata keys`() throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("README.md", contents: "# Demo")
+        _ = try service.initialize(at: workspace.root.string, force: false)
+        var state = try workspace.loadState()
+        state.schemaVersion = "0.1.0"
+        state.tree["README.md"] = TreeEntry(description: "Project readme", references: ["DOCS/README.md"])
+        try workspace.saveState(state)
+
+        try workspace.writeFile("Package.swift", contents: "// package")
+        _ = try service.sync(at: workspace.root.string, interactive: false)
+
+        let yaml = try String(contentsOf: (workspace.root + Path("treedocs.yaml")).url, encoding: .utf8)
+        #expect(yaml.contains("schema_version: 0.1.0"))
+        #expect(yaml.contains("description: Project readme"))
+        #expect(yaml.contains("references:"))
+        #expect(!yaml.contains("_description: Project readme"))
+    }
+
+    @Test
     func `Check reports changed paths when filesystem kind changes`() throws {
         let workspace = try TestWorkspace()
         let service = try workspace.service()
@@ -906,7 +958,7 @@ struct WorkflowTests {
     @Test
     func `Root command reports CLI version without shorthand rewriting`() throws {
         #expect(TreeDocs.configuration.version == TreeDocsVersion.current)
-        #expect(TreeDocs.configuration.version == "0.1.0")
+        #expect(TreeDocs.configuration.version == "0.2.0")
         #expect(TreeDocsMain.rewrittenArguments(["treedocs", "--version"]) == ["--version"])
     }
 

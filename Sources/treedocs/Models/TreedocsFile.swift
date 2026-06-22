@@ -3,15 +3,32 @@ import Yams
 
 /// Shared schema metadata for generated `treedocs.yaml` files.
 enum TreedocsSchemaMetadata {
+    /// The deprecated initial treedocs file-format schema version.
+    static let v0_1_0 = "0.1.0"
+
     /// The current treedocs file-format schema version.
-    static let currentVersion = "0.1.0"
+    static let currentVersion = "0.2.0"
 
     /// Schema versions this CLI can read and validate.
-    static let supportedVersions = [currentVersion]
+    static let supportedVersions = [v0_1_0, currentVersion]
+
+    /// Schema versions that remain supported but should be migrated.
+    static let deprecatedVersions = [v0_1_0]
 
     /// Returns whether this CLI has bundled handling for a schema version.
     static func isSupported(_ version: String) -> Bool {
         supportedVersions.contains(version)
+    }
+
+    /// Returns whether a schema version remains supported but deprecated.
+    static func isDeprecated(_ version: String) -> Bool {
+        deprecatedVersions.contains(version)
+    }
+
+    /// Returns non-fatal warnings for supported but deprecated schema versions.
+    static func deprecationWarnings(for version: String) -> [String] {
+        guard isDeprecated(version) else { return [] }
+        return ["treedocs.yaml schema_version \"\(version)\" is deprecated. Migrate to \"\(currentVersion)\": DOCS/Migrating treedocs.yaml 0.1.0 to 0.2.0.md"]
     }
 
     /// Returns the public JSON Schema URL for a schema version.
@@ -170,7 +187,7 @@ struct EntryDocumentation: Equatable {
     /// - Parameter value: The raw YAML value for a leaf entry or directory `_doc` key.
     /// - Returns: Parsed documentation, or `nil` when no documentation exists.
     /// - Throws: `TreeDocsError` when the YAML value is neither a string nor a mapping.
-    static func fromYAML(_ value: Any?) throws -> EntryDocumentation? {
+    static func fromYAML(_ value: Any?, schemaVersion: String = TreedocsSchemaMetadata.currentVersion) throws -> EntryDocumentation? {
         guard let value else { return nil }
 
         if let string = value as? String {
@@ -181,10 +198,22 @@ struct EntryDocumentation: Equatable {
             throw TreeDocsError.message("Invalid documentation entry in treedocs.yaml.")
         }
 
+        let descriptionKey = Self.descriptionKey(for: schemaVersion)
+        let referencesKey = Self.referencesKey(for: schemaVersion)
         return EntryDocumentation(
-            description: parseString(mapping["description"]),
-            references: parseStringArray(mapping["references"]) ?? []
+            description: parseString(mapping[descriptionKey]),
+            references: parseStringArray(mapping[referencesKey]) ?? []
         )
+    }
+
+    /// Returns the schema-specific YAML key for object-form descriptions.
+    static func descriptionKey(for schemaVersion: String) -> String {
+        schemaVersion == TreedocsSchemaMetadata.v0_1_0 ? "description" : "_description"
+    }
+
+    /// Returns the schema-specific YAML key for object-form references.
+    static func referencesKey(for schemaVersion: String) -> String {
+        schemaVersion == TreedocsSchemaMetadata.v0_1_0 ? "references" : "_references"
     }
 
     /// Converts documentation to YAML.
@@ -193,17 +222,19 @@ struct EntryDocumentation: Equatable {
     /// references uses the mapping form required by the schema.
     ///
     /// - Returns: A YAML-compatible string or mapping.
-    func toYAMLValue() -> Any {
+    func toYAMLValue(schemaVersion: String = TreedocsSchemaMetadata.currentVersion) -> Any {
         if references.isEmpty, let description {
             return description
         }
 
         var mapping: [String: Any] = [:]
+        let descriptionKey = Self.descriptionKey(for: schemaVersion)
+        let referencesKey = Self.referencesKey(for: schemaVersion)
         if let description {
-            mapping["description"] = description
+            mapping[descriptionKey] = description
         }
         if !references.isEmpty {
-            mapping["references"] = references
+            mapping[referencesKey] = references
         }
         return mapping
     }
@@ -298,7 +329,7 @@ struct TreeEntry: Equatable {
     /// - Parameter value: The raw YAML value for a tree entry.
     /// - Returns: A parsed tree entry.
     /// - Throws: `TreeDocsError` when the value cannot be interpreted as a valid tree entry.
-    static func fromYAML(_ value: Any) throws -> TreeEntry {
+    static func fromYAML(_ value: Any, schemaVersion: String = TreedocsSchemaMetadata.currentVersion) throws -> TreeEntry {
         if let string = value as? String {
             return TreeEntry(description: string)
         }
@@ -307,7 +338,11 @@ struct TreeEntry: Equatable {
             throw TreeDocsError.message("Invalid tree entry in treedocs.yaml.")
         }
 
-        let reservedLeafKeys: Set<String> = ["description", "references", "_link"]
+        let reservedLeafKeys: Set<String> = [
+            EntryDocumentation.descriptionKey(for: schemaVersion),
+            EntryDocumentation.referencesKey(for: schemaVersion),
+            "_link",
+        ]
         let hasDirectoryMarker = mapping.keys.contains("_doc")
         let childKeys = mapping.keys.filter { !reservedLeafKeys.contains($0) && $0 != "_doc" }
         let isDirectory = hasDirectoryMarker || !childKeys.isEmpty
@@ -315,12 +350,12 @@ struct TreeEntry: Equatable {
         if isDirectory {
             var children: [String: TreeEntry] = [:]
             for childKey in childKeys {
-                let entry = try TreeEntry.fromYAML(mapping[childKey] as Any)
+                let entry = try TreeEntry.fromYAML(mapping[childKey] as Any, schemaVersion: schemaVersion)
                 TreeOperations.insert(entry: entry, at: RelativePath.components(for: childKey), into: &children)
             }
 
             return TreeEntry(
-                documentation: try EntryDocumentation.fromYAML(mapping["_doc"]),
+                documentation: try EntryDocumentation.fromYAML(mapping["_doc"], schemaVersion: schemaVersion),
                 link: parseString(mapping["_link"]),
                 children: children,
                 isDirectory: true
@@ -328,7 +363,7 @@ struct TreeEntry: Equatable {
         }
 
         return TreeEntry(
-            documentation: try EntryDocumentation.fromYAML(mapping),
+            documentation: try EntryDocumentation.fromYAML(mapping, schemaVersion: schemaVersion),
             link: parseString(mapping["_link"]),
             children: [:],
             isDirectory: false
@@ -341,17 +376,17 @@ struct TreeEntry: Equatable {
     /// `_link`, and sorted child keys when present.
     ///
     /// - Returns: A YAML-compatible scalar or mapping for the entry.
-    func toYAMLValue() -> Any {
+    func toYAMLValue(schemaVersion: String = TreedocsSchemaMetadata.currentVersion) -> Any {
         if isDirectory {
             var mapping: [String: Any] = [:]
             if let documentation, !documentation.isEmpty {
-                mapping["_doc"] = documentation.toYAMLValue()
+                mapping["_doc"] = documentation.toYAMLValue(schemaVersion: schemaVersion)
             }
             if let link {
                 mapping["_link"] = link
             }
             for key in children.keys.sorted() {
-                mapping[key] = children[key]?.toYAMLValue()
+                mapping[key] = children[key]?.toYAMLValue(schemaVersion: schemaVersion)
             }
             return mapping
         }
@@ -361,11 +396,13 @@ struct TreeEntry: Equatable {
         }
 
         var mapping: [String: Any] = [:]
+        let descriptionKey = EntryDocumentation.descriptionKey(for: schemaVersion)
+        let referencesKey = EntryDocumentation.referencesKey(for: schemaVersion)
         if let description {
-            mapping["description"] = description
+            mapping[descriptionKey] = description
         }
         if !references.isEmpty {
-            mapping["references"] = references
+            mapping[referencesKey] = references
         }
         if let link {
             mapping["_link"] = link
@@ -440,7 +477,7 @@ struct TreedocsFile: Equatable {
         var tree: [String: TreeEntry] = [:]
         if let treeMapping = mapping["tree"] as? [String: Any] {
             for (key, value) in treeMapping {
-                let entry = try TreeEntry.fromYAML(value)
+                let entry = try TreeEntry.fromYAML(value, schemaVersion: schemaVersion)
                 TreeOperations.insert(entry: entry, at: RelativePath.components(for: key), into: &tree)
             }
         }
@@ -480,7 +517,7 @@ struct TreedocsFile: Equatable {
 
         var treeValue: [String: Any] = [:]
         for key in tree.keys.sorted() {
-            treeValue[key] = tree[key]?.toYAMLValue()
+            treeValue[key] = tree[key]?.toYAMLValue(schemaVersion: schemaVersion)
         }
         root["tree"] = treeValue
 

@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dandylyons.github.io/treedocs/schemas/0.1.0/treedocs.schema.json",
+  "title": "treedocs.yaml",
+  "description": "Schema for the YAML repository documentation state maintained by treedocs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "signature", "tree"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["0.1.0"],
+      "description": "The treedocs.yaml file-format schema version. This is distinct from project.version."
+    },
+    "project": { "$ref": "#/$defs/project" },
+    "overrides": { "$ref": "#/$defs/overrides" },
+    "signature": {
+      "type": "string",
+      "pattern": "^sha256:[A-Fa-f0-9]{64}$",
+      "description": "Deterministic SHA-256 structural hash of the scanned tree."
+    },
+    "tree": {
+      "type": "object",
+      "description": "Nested filesystem mirror keyed by repository-relative path components or relative path strings.",
+      "additionalProperties": { "$ref": "#/$defs/treeEntry" }
+    }
+  },
+  "$defs": {
+    "project": {
+      "type": "object",
+      "description": "Repository metadata stored in treedocs.yaml.",
+      "required": ["name", "version", "last_updated"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "last_updated": { "type": "string", "format": "date" }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "overrides": {
+      "type": "object",
+      "description": "Project-local configuration overrides.",
+      "additionalProperties": false,
+      "properties": {
+        "exclude": { "type": "array", "items": { "type": "string" } },
+        "use_gitignore": { "type": "boolean" },
+        "max_description_length": { "type": "integer", "minimum": 0 },
+        "indent_size": { "type": "integer", "minimum": 0 },
+        "align_columns": { "type": "boolean" },
+        "check_severity": { "type": "string", "enum": ["error", "warn"] },
+        "auto_init_empty": { "type": "boolean" },
+        "theme": { "type": "string" },
+        "icons": { "type": "boolean" },
+        "ai_provider": { "type": "string" },
+        "ai_model": { "type": "string" }
+      }
+    },
+    "entryDocumentation": {
+      "description": "Documentation can be a simple description string or an object with references.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "description": { "type": "string" },
+            "references": { "$ref": "#/$defs/references" }
+          }
+        }
+      ]
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "reference": {
+      "description": "Supplementary documentation reference: a local path, an HTTPS URL, or a markdown link to either.",
+      "oneOf": [
+        { "type": "string", "description": "Repository-local path reference.", "pattern": "^(?!\\[)(?![A-Za-z][A-Za-z0-9+.-]*:)(?=.*\\S)[^\\n]+$" },
+        { "type": "string", "description": "HTTPS URL reference.", "pattern": "^https://\\S+$" },
+        { "type": "string", "description": "Markdown link whose target is a local path or HTTPS URL.", "pattern": "^\\[[^\\]\\n]+\\]\\((?:https://\\S+|(?!(?:[A-Za-z][A-Za-z0-9+.-]*:))(?=.*\\S)[^)\\n]+)\\)$" }
+      ]
+    },
+    "treeEntry": {
+      "description": "A documented path. Strings are simple descriptions; objects may contain documentation fields, links, and nested children.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "description": { "type": "string" },
+            "references": { "$ref": "#/$defs/references" },
+            "_doc": { "$ref": "#/$defs/entryDocumentation" },
+            "_link": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": { "$ref": "#/$defs/treeEntry" }
+        }
+      ]
+    }
+  }
+}

@@ -20,7 +20,7 @@ Use `update` to add descriptions, references, or links for documented entries:
 
 ```bash
 treedocs update Sources/treedocs/Core "Core scanning, rendering, and config logic"
-treedocs update README.md --add-reference DOCS/InitialSpecs.md
+treedocs update README.md --add-reference DOCS/schema-cli-usage.md
 treedocs update Sources/treedocs/Commands --link Sources/treedocs/TreeDocs.swift
 ```
 

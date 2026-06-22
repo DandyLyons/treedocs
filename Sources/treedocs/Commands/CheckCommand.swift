@@ -19,6 +19,7 @@ struct CheckCommand: ParsableCommand {
     mutating func run() throws {
         let report = try TreedocsService().check(at: options.path)
 
+        printSection("Schema warnings", values: report.schemaWarnings)
         printSection("Schema validation failures", values: report.schemaErrors)
 
         if report.hasSignatureDrift {
@@ -32,7 +33,7 @@ struct CheckCommand: ParsableCommand {
         printSection("Shadowed child-owned paths", values: report.shadowedPaths)
         printSection("Missing descriptions", values: report.missingDescriptions)
 
-        if !report.hasIssues {
+        if !report.hasIssues && report.schemaWarnings.isEmpty {
             print("Tree is up to date.")
             return
         }
