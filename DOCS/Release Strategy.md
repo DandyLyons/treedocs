@@ -13,12 +13,13 @@ CLI releases should be published through GitHub Releases. The initial release st
 ### CLI Version Procedure
 
 1. Update `TreeDocsVersion.current` in `Sources/treedocs/TreeDocs.swift` when the CLI release version changes.
-2. Update README and site installation examples when the recommended released version changes.
-3. Run `swift build` and `swift test`.
-4. Tag the release commit, such as `0.1.0`.
-5. Create a GitHub Release for the tag with release notes.
-6. Calculate the release source archive SHA256 for Homebrew after GitHub serves the tag archive.
-7. Publish or update package-manager distribution entries after the tag exists.
+2. Update README installation examples when the recommended released version changes.
+3. Update the GitHub Pages site under `site/` so the landing page identifies the current release version and current package-manager install commands.
+4. Run `swift build` and `swift test`.
+5. Tag the release commit, such as `0.1.0`.
+6. Create a GitHub Release for the tag with release notes.
+7. Calculate the release source archive SHA256 for Homebrew after GitHub serves the tag archive.
+8. Publish or update package-manager distribution entries after the tag exists.
 
 ### Package Distribution
 
@@ -45,7 +46,8 @@ Generated `treedocs.yaml` files include a managed YAML language-server header th
 5. Update `.env.schema` `CURRENT_TREEDOCS_JSONSCHEMA_VERSION` to the new schema version.
 6. Add or update schema validation tests for the new version.
 7. Run `swift build` and `swift test`.
-8. Merge to `main` to publish the schema through GitHub Pages.
+8. Update the GitHub Pages site under `site/` when public schema links, examples, or current-version copy need to change.
+9. Merge to `main` to publish the schema through GitHub Pages.
 
 ### GitHub Pages Canonization
 

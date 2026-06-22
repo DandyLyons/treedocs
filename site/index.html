@@ -14,7 +14,7 @@
       <div class="title-row">
         <h1 id="title">treedocs</h1>
         <div class="badges" aria-label="Project metadata">
-          <a href="https://github.com/DandyLyons/treedocs/releases">v0.1.0</a>
+          <a href="https://github.com/DandyLyons/treedocs/releases/tag/0.2.0">v0.2.0</a>
           <span>macOS 13+</span>
         </div>
       </div>
@@ -61,11 +61,11 @@
     <section class="installation" aria-labelledby="installation-title">
       <details>
         <summary id="installation-title">Installation</summary>
-        <p><code>treedocs</code> currently supports macOS 13 and newer. Version 0.1.0 is source-build only, so installing through Homebrew, Mint, or mise requires a Swift 6-capable build environment, usually Xcode 16+.</p>
+        <p><code>treedocs</code> currently supports macOS 13 and newer. Version 0.2.0 is source-build only, so installing through Homebrew, Mint, or mise requires a Swift 6-capable build environment, usually Xcode 16+.</p>
 
         <details class="install-method">
           <summary>mise</summary>
-          <pre><code class="language-bash">MISE_EXPERIMENTAL=true mise use -g spm:DandyLyons/treedocs@0.1.0</code></pre>
+          <pre><code class="language-bash">MISE_EXPERIMENTAL=true mise use -g spm:DandyLyons/treedocs@0.2.0</code></pre>
           <p><a href="https://mise.jdx.dev/">mise</a> uses its Swift Package Manager backend. treedocs does not currently publish artifact bundles, so mise builds from source. The mise <code>spm:</code> backend is currently experimental, so set <code>MISE_EXPERIMENTAL=true</code> when installing.</p>
         </details>
 
@@ -77,8 +77,8 @@
 
         <details class="install-method">
           <summary>Mint</summary>
-          <pre><code class="language-bash">mint install DandyLyons/treedocs@0.1.0
-mint run DandyLyons/treedocs@0.1.0 --help</code></pre>
+          <pre><code class="language-bash">mint install DandyLyons/treedocs@0.2.0
+mint run DandyLyons/treedocs@0.2.0 --help</code></pre>
           <p><a href="https://github.com/yonaskolb/Mint">Mint</a> builds the Swift executable package from the tagged GitHub source.</p>
         </details>
       </details>
