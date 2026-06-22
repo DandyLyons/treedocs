@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://dandylyons.github.io/treedocs/schemas/0.2.0/treedocs.schema.json
+schema_version: 0.2.0
 project:
-  last_updated: '2026-05-08'
+  last_updated: "2026-05-08"
   name: treedocs
   version: 0.1.0
-schema_version: 0.2.0
 signature: sha256:02e78d9150f1b702c265114a8bd710afe083b3528fe58175bd16ebe10c01adda
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
@@ -20,10 +20,11 @@ tree:
     launch.json: Debug launch configurations for running treedocs from VS Code.
   AGENTS.md: Project instructions and operating notes for AI coding agents.
   DOCS:
+    _doc: Supplemental project documentation and schema assets.
     Archive:
+      _doc: Archived historical project documentation.
       0.1.0 Initial Spec.md: Historical first-release design and implementation-tracking
         draft retained for context; not the current normative spec.
-      _doc: Archived historical project documentation.
     Feature Idea - treedocs Git History.md: Brainstorming new features that we could
       add if treedocs inspected the git history and compared it to the treedocs.yaml
       over time.
@@ -32,7 +33,6 @@ tree:
     Release Strategy.md: Documents CLI and JSON Schema release procedures, including
       GitHub Releases, Homebrew tap publishing, schema immutability, and GitHub Pages
       schema deployment.
-    _doc: Supplemental project documentation and schema assets.
     schema-cli-usage.md: An overview of the current treedocs JSONSchema and what schema
       features have been used and have not been used in the CLI features.
   LICENSE: MIT license terms for using, copying, modifying, and distributing treedocs.
@@ -43,7 +43,9 @@ tree:
   Sources:
     _doc: Swift package source code for the treedocs executable.
     treedocs:
+      _doc: Main treedocs executable target.
       Commands:
+        _doc: ArgumentParser command implementations for treedocs subcommands.
         CheckCommand.swift: Implements validation for signature drift and missing
           descriptions.
         Common.swift: Shared CLI options and helpers used by multiple commands.
@@ -67,8 +69,9 @@ tree:
           preserving descriptions.
         UpdateCommand.swift: Updates descriptions, references, and links for documented
           paths.
-        _doc: ArgumentParser command implementations for treedocs subcommands.
       Core:
+        _doc: Core services for loading, scanning, rendering, and updating treedocs
+          data.
         ConfigLoader.swift: Loads and validates treedocs configuration from YAML.
         DescriptionSuggestionCatalog.swift: Provides default description suggestions
           for paths that are missing a description.
@@ -89,27 +92,25 @@ tree:
         TreedocsSchemaValidator.swift: Validates treedocs.yaml documents against the
           canonical JSON Schema.
         TreedocsService.swift: High-level orchestration layer for CLI workflows.
-        _doc: Core services for loading, scanning, rendering, and updating treedocs
-          data.
       Models:
+        _doc: Data models representing treedocs.yaml and related configuration.
         TreedocsConfig.swift: Codable model for treedocs configuration and ignore
           settings.
         TreedocsFile.swift: Codable model for project metadata, signature, and documentation
           tree contents.
-        _doc: Data models representing treedocs.yaml and related configuration.
       Resources:
         _doc: Assets included in the app bundle.
         descriptions-suggestions.yaml: Default treedocs description suggestions catalog.
       TreeDocs.swift: Executable entry point that wires the root CLI and subcommands
         together.
-      _doc: Main treedocs executable target.
       treedocs.docc:
-        GettingStarted.md: DocC tutorial or guide for getting started with treedocs.
         _doc: DocC documentation catalog for generated package documentation.
+        GettingStarted.md: DocC tutorial or guide for getting started with treedocs.
         treedocs.md: DocC landing page for the treedocs package documentation.
   Tests:
     _doc: Swift Testing test suite for treedocs behavior.
     treedocsTests:
+      _doc: Unit and workflow tests for the treedocs package.
       IgnoreMatcherTests.swift: Tests ignore pattern loading, matching, and negation
         behavior.
       ScannerAndSignatureTests.swift: Tests filesystem scanning and signature generation.
@@ -117,7 +118,6 @@ tree:
         and tree entry serialization.
       TestSupport.swift: Shared temporary workspace helpers for treedocs tests.
       WorkflowTests.swift: End-to-end command workflow tests covering common CLI usage.
-      _doc: Unit and workflow tests for the treedocs package.
   contrib:
     _doc: Shared examples and optional integration assets for treedocs users.
     homebrew:
@@ -133,6 +133,7 @@ tree:
     _doc: Static files deployed to the project GitHub Pages site.
     index.html: Landing page for the treedocs GitHub Pages site.
     schemas:
+      _doc: Public JSON Schema endpoints served by the GitHub Pages site.
       0.1.0:
         _doc: Immutable treedocs schema release 0.1.0.
         treedocs-0.1.0.schema.json: Versioned resource copy of the 0.1.0 schema bundled
@@ -145,6 +146,5 @@ tree:
           into the CLI for offline validation.
         treedocs.schema.json: Versioned canonical JSON Schema for treedocs.yaml release
           0.2.0.
-      _doc: Public JSON Schema endpoints served by the GitHub Pages site.
     styles.css: Stylesheet for the treedocs GitHub Pages landing page.
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.

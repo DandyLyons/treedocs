@@ -494,39 +494,83 @@ struct TreedocsFile: Equatable {
     /// Serializes the state file to formatted YAML text.
     ///
     /// Empty project and override sections are omitted, tree keys are emitted in sorted order, and the
-    /// output uses two-space indentation with sorted mapping keys for deterministic diffs.
+    /// output uses two-space indentation. Metadata keys in tree entries are emitted before child keys
+    /// so directory descriptions stay adjacent to their directory names.
     ///
     /// - Returns: A YAML string suitable for writing to `treedocs.yaml`.
     /// - Throws: YAML serialization errors from Yams.
     func toYAMLString() throws -> String {
-        var root: [String: Any] = [:]
-        root["schema_version"] = schemaVersion
+        var rootPairs: [(String, Any)] = [("schema_version", schemaVersion)]
         let projectValue = project.toYAMLValue()
         if !projectValue.isEmpty {
-            root["project"] = projectValue
+            rootPairs.append(("project", projectValue))
         }
         if let overrides {
             let value = overrides.toYAMLValue()
             if !value.isEmpty {
-                root["overrides"] = value
+                rootPairs.append(("overrides", value))
             }
         }
         if let signature {
-            root["signature"] = signature
+            rootPairs.append(("signature", signature))
         }
 
-        var treeValue: [String: Any] = [:]
-        for key in tree.keys.sorted() {
-            treeValue[key] = tree[key]?.toYAMLValue(schemaVersion: schemaVersion)
+        let treePairs = tree.keys.sorted().map { key in
+            (key, tree[key]!.toYAMLValue(schemaVersion: schemaVersion))
         }
-        root["tree"] = treeValue
+        rootPairs.append(("tree", treePairs))
 
-        return try Yams.dump(
-            object: root,
+        return try Yams.serialize(
+            node: try yamlNode(fromOrderedPairs: rootPairs),
             indent: 2,
             allowUnicode: true,
             lineBreak: .ln,
-            sortKeys: true
+            sortKeys: false
         )
+    }
+
+    private func yamlNode(fromOrderedPairs pairs: [(String, Any)]) throws -> Node {
+        try Node(pairs.map { key, value in (yamlStringNode(key), try yamlNode(from: value)) })
+    }
+
+    private func yamlNode(from value: Any) throws -> Node {
+        if let pairs = value as? [(String, Any)] {
+            return try yamlNode(fromOrderedPairs: pairs)
+        }
+        if let mapping = value as? [String: Any] {
+            let keys = mapping.keys.sorted { left, right in
+                let leftIsMetadata = left.hasPrefix("_")
+                let rightIsMetadata = right.hasPrefix("_")
+                if leftIsMetadata != rightIsMetadata {
+                    return leftIsMetadata
+                }
+                return left < right
+            }
+            return try yamlNode(fromOrderedPairs: keys.map { ($0, mapping[$0] as Any) })
+        }
+        if let sequence = value as? [Any] {
+            return try Node(sequence.map { try yamlNode(from: $0) })
+        }
+        if let string = value as? String {
+            return yamlStringNode(string)
+        }
+        if let bool = value as? Bool {
+            return try Node(bool)
+        }
+        if let int = value as? Int {
+            return try Node(int)
+        }
+        return yamlStringNode(String(describing: value))
+    }
+
+    private func yamlStringNode(_ string: String) -> Node {
+        Node(string, .implicit, shouldQuoteYAMLString(string) ? .doubleQuoted : .any)
+    }
+
+    private func shouldQuoteYAMLString(_ string: String) -> Bool {
+        guard let loaded = try? Yams.load(yaml: "\(string)\n") else {
+            return true
+        }
+        return (loaded as? String) != string
     }
 }

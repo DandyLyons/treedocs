@@ -540,6 +540,28 @@ struct SchemaAndConfigTests {
     }
 
     @Test
+    func `TreedocsFile serializes tree metadata before child keys`() throws {
+        let file = TreedocsFile(
+            tree: [
+                "Sources": TreeEntry(
+                    documentation: EntryDocumentation(description: "Source files"),
+                    link: "DOCS/Sources.md",
+                    children: ["App.swift": TreeEntry(description: "App entry")],
+                    isDirectory: true
+                ),
+            ]
+        )
+
+        let yaml = try file.toYAMLString()
+        let docIndex = try #require(yaml.range(of: "    _doc: Source files")?.lowerBound)
+        let linkIndex = try #require(yaml.range(of: "    _link: DOCS/Sources.md")?.lowerBound)
+        let childIndex = try #require(yaml.range(of: "    App.swift: App entry")?.lowerBound)
+
+        #expect(docIndex < childIndex)
+        #expect(linkIndex < childIndex)
+    }
+
+    @Test
     func `TreedocsConfig toYAMLValue omits nil fields`() {
         let config = TreedocsConfig(indentSize: 4, theme: "dark")
         let value = config.toYAMLValue()
