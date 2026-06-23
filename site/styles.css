@@ -127,6 +127,17 @@ a {
   border-color: var(--accent);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -137,7 +148,8 @@ a {
 article,
 .example,
 .installation,
-.quickstart {
+.quickstart,
+.video {
   border: 1px solid var(--border);
   border-radius: 1.25rem;
   padding: 1.25rem;
@@ -151,6 +163,27 @@ article p {
 
 .quickstart {
   margin-top: 1rem;
+}
+
+.video {
+  margin-top: 3rem;
+}
+
+.video-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.video-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 .installation {

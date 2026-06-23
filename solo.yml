@@ -29,3 +29,10 @@ processes:
     auto_restart: false
     restart_when_changed: []
     env: {}
+  Preview Site:
+    command: python3 -m http.server 8734 --bind 127.0.0.1 --directory site
+    working_dir: null
+    auto_start: false
+    auto_restart: false
+    restart_when_changed: []
+    env: {}
