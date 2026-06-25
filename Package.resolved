@@ -1,13 +1,13 @@
 {
-  "originHash" : "18f3aeb27def81092221d4d23d06342e9f9909f33c95f21d9c802976dbdc09c3",
+  "originHash" : "7313004476b0bc8a10b10b304c08a6c7a09ab61cb0ea6e3e153ae9aff40b58fc",
   "pins" : [
     {
       "identity" : "noora",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tuist/Noora",
+      "location" : "https://github.com/asmrtfm/Noora",
       "state" : {
-        "revision" : "70c6d1477a982f3e4cd46ed2d122e04e9d0a0b59",
-        "version" : "0.56.0"
+        "branch" : "fix/restore-termios-on-signal",
+        "revision" : "76db192eb53f59f6c8a5496bf6b4bb4d76182dca"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser.git",
       "state" : {
-        "revision" : "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
-        "version" : "1.7.1"
+        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
+        "version" : "1.8.2"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log",
       "state" : {
-        "revision" : "92448c359f00ebe36ae97d3bd9086f13c7692b5a",
-        "version" : "1.13.2"
+        "revision" : "a878e7f8f46cfc0e1125e565b5c08e7d5272dc9a",
+        "version" : "1.14.0"
       }
     },
     {

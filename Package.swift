@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.4.0"),
         .package(url: "https://github.com/kylef/PathKit.git", from: "1.0.1"),
         .package(url: "https://github.com/ajevans99/swift-json-schema", from: "0.13.1"),
-        .package(url: "https://github.com/tuist/Noora", from: "0.56.0"),
+        .package(url: "https://github.com/asmrtfm/Noora", branch: "fix/restore-termios-on-signal"),
         .package(url: "https://github.com/onevcat/Rainbow", from: "4.2.1"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
     ],
