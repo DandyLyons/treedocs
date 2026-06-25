@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/ajevans99/swift-json-schema", from: "0.13.1"),
         .package(url: "https://github.com/tuist/Noora", from: "0.56.0"),
         .package(url: "https://github.com/onevcat/Rainbow", from: "4.2.1"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.0.0"),
     ],
     targets: [
         .executableTarget(
@@ -28,6 +29,7 @@ let package = Package(
                 .product(name: "JSONSchema", package: "swift-json-schema"),
                 .product(name: "Noora", package: "Noora"),
                 .product(name: "Rainbow", package: "Rainbow"),
+                .product(name: "Crypto", package: "swift-crypto"),
             ],
             resources: [
                 .copy("../../site/schemas/0.1.0/treedocs-0.1.0.schema.json"),

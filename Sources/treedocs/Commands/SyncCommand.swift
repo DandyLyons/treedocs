@@ -1,5 +1,9 @@
 import ArgumentParser
+#if canImport(Darwin)
 import Darwin
+#else
+import Glibc
+#endif
 import Rainbow
 
 /// Implements the `treedocs sync` command.

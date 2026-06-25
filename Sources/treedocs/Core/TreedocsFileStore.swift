@@ -20,7 +20,7 @@ struct TreedocsFileStore {
         try validator.validateFile(at: path)
         let file = try loadWithoutSchemaValidation(at: path)
         for warning in TreedocsSchemaMetadata.deprecationWarnings(for: file.schemaVersion) {
-            fputs("Warning: \(warning)\n", stderr)
+            FileHandle.standardError.write(Data("Warning: \(warning)\n".utf8))
         }
         return file
     }
