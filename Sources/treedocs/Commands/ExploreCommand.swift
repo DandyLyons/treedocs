@@ -15,8 +15,12 @@ struct ExploreCommand: ParsableCommand {
     @Argument(help: "Optional paths to expand one level. Defaults to the repository root.")
     var targetPaths: [String] = []
 
+    /// Whether long descriptions should be rendered without truncation.
+    @Flag(name: [.customShort("f"), .long], help: "Render full descriptions instead of truncating them.")
+    var fullDescriptions = false
+
     /// Renders the root tree with requested paths expanded.
     mutating func run() throws {
-        print(try TreedocsService().explore(at: options.path, expandedPaths: targetPaths))
+        print(try TreedocsService().explore(at: options.path, expandedPaths: targetPaths, fullDescriptions: fullDescriptions))
     }
 }

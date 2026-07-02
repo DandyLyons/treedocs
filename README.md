@@ -81,10 +81,14 @@ treedocs check
 treedocs inspect Sources/treedocs --recursive
 treedocs update README.md "Project overview"
 treedocs update Sources/treedocs/Core --add-reference DOCS/schema-cli-usage.md
+treedocs show . --full-descriptions
+treedocs explore Sources/ --full-descriptions
 treedocs ls
 treedocs ls Sources/treedocs
 treedocs path renderer
 ```
+
+`show` and `explore` truncate long descriptions by default. Use `--full-descriptions` or `-f` to render complete descriptions for files and folders.
 
 Run `treedocs --help` for the full command surface.
 

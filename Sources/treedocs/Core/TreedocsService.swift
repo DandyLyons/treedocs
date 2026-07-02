@@ -421,11 +421,11 @@ struct TreedocsService {
     ///   - expandedPaths: Documentation paths to expand one level; an empty list expands the root.
     /// - Returns: A newline-separated textual representation of the explored tree.
     /// - Throws: `TreeDocsError` when repository state or a requested path cannot be found, or when configuration loading fails.
-    func explore(at rootPath: String, expandedPaths: [String]) throws -> String {
+    func explore(at rootPath: String, expandedPaths: [String], fullDescriptions: Bool = false) throws -> String {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
         let file = try store.load(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: file.overrides)
-        return try renderer.renderExploration(tree: file.tree, expandedPaths: expandedPaths, config: loaded.config)
+        return try renderer.renderExploration(tree: file.tree, expandedPaths: expandedPaths, config: renderConfig(from: loaded.config, fullDescriptions: fullDescriptions))
     }
 
     /// Renders documentation for a path, optionally checking for drift first.
@@ -439,7 +439,7 @@ struct TreedocsService {
     ///   - checkFirst: Whether to run a non-mutating check before rendering.
     /// - Returns: Rendered output, optionally prefixed with a warning line.
     /// - Throws: Any error thrown by checking or rendering the requested tree.
-    func show(at rootPath: String, path: String, checkFirst: Bool) throws -> String {
+    func show(at rootPath: String, path: String, checkFirst: Bool, fullDescriptions: Bool = false) throws -> String {
         var lines: [String] = []
         var displayTree: [String: TreeEntry]?
         var statusOverrides: [String: TreeRenderer.EntryStatus] = [:]
@@ -468,20 +468,29 @@ struct TreedocsService {
         }
 
         let tree = displayTree ?? file.tree
+        let config = renderConfig(from: loaded.config, fullDescriptions: fullDescriptions)
 
         switch linkResolver.resolve(path: normalizedPath, in: file.tree) {
         case .none:
-            lines.append(try renderer.render(tree: tree, subtreePath: path, config: loaded.config, statusOverrides: statusOverrides))
+            lines.append(try renderer.render(tree: tree, subtreePath: path, config: config, statusOverrides: statusOverrides))
         case let .external(url):
             lines.append("External alias: \(displayPath(normalizedPath)) -> \(url)")
         case let .resolved(resolvedPath, _, _):
-            lines.append(try renderer.render(tree: tree, subtreePath: resolvedPath, config: loaded.config, statusOverrides: statusOverrides))
+            lines.append(try renderer.render(tree: tree, subtreePath: resolvedPath, config: config, statusOverrides: statusOverrides))
         case let .broken(target, chain):
             throw TreeDocsError.message("Broken link: \(chain.joined(separator: " -> ")) (missing target: \(target))")
         case let .cycle(chain):
             throw TreeDocsError.message("Link cycle detected: \(chain.joined(separator: " -> "))")
         }
         return lines.joined(separator: "\n")
+    }
+
+    private func renderConfig(from config: TreedocsConfig, fullDescriptions: Bool) -> TreedocsConfig {
+        guard fullDescriptions else { return config }
+
+        var config = config
+        config.maxDescriptionLength = 0
+        return config
     }
 
     private func scopedDiscrepancyText(subtreePath: String, subtreeHasIssues: Bool, tree: [String: TreeEntry]) -> String {

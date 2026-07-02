@@ -710,6 +710,42 @@ struct WorkflowTests {
     }
 
     @Test
+    func `show and explore can render full descriptions`() throws {
+        try withRainbowConsoleOutput {
+        let workspace = try TestWorkspace()
+        let longDescription = "This description is intentionally long enough to exceed the configured render limit."
+        try workspace.saveState(
+            TreedocsFile(
+                project: ProjectMetadata(name: "Example", version: "1.0.0", lastUpdated: "2026-06-13"),
+                overrides: TreedocsConfig(maxDescriptionLength: 24, checkSeverity: .error),
+                signature: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                tree: [
+                    "Docs": TreeEntry(description: longDescription, children: [
+                        "Guide.md": TreeEntry(description: longDescription),
+                    ], isDirectory: true),
+                ]
+            )
+        )
+
+        let service = try workspace.service()
+        let truncatedShow = try service.show(at: workspace.root.string, path: ".", checkFirst: false)
+        let fullShow = try service.show(at: workspace.root.string, path: ".", checkFirst: false, fullDescriptions: true)
+        let truncatedExplore = try service.explore(at: workspace.root.string, expandedPaths: [])
+        let fullExplore = try service.explore(at: workspace.root.string, expandedPaths: [], fullDescriptions: true)
+
+        #expect(truncatedShow.contains("This description is i..."))
+        #expect(!truncatedShow.contains(longDescription))
+        #expect(fullShow.contains(longDescription))
+        #expect(!fullShow.contains("This description is i..."))
+
+        #expect(truncatedExplore.contains("This description is i..."))
+        #expect(!truncatedExplore.contains(longDescription))
+        #expect(fullExplore.contains(longDescription))
+        #expect(!fullExplore.contains("This description is i..."))
+        }
+    }
+
+    @Test
     func `Tree renderer formats root connectors colors metadata and descriptions exactly`() throws {
         try withRainbowConsoleOutput {
         let tree = [
