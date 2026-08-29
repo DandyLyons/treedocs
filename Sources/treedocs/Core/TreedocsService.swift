@@ -148,8 +148,14 @@ struct TreedocsService {
     var scanner = TreeScanner()
     var renderer = TreeRenderer()
     var linkResolver = LinkResolver()
+
+    /// Loads supported metadata from scanner-discovered README files.
     var readmeLoader = ReadmeDocumentationLoader()
+
+    /// Stages README imports and identifies field conflicts.
     var readmeReconciler = ReadmeReconciler()
+
+    /// Commits coordinated README and state-file replacements with rollback.
     var transactionWriter: any TransactionalFileWriting = TransactionalFileWriter()
 
     /// Creates a fresh `treedocs.yaml` for a repository.
@@ -199,6 +205,7 @@ struct TreedocsService {
     ///   - rootPath: The repository root path supplied by the caller.
     ///   - interactive: Whether to collect missing descriptions while syncing.
     ///   - missingDescriptionCollector: The collector used for interactive description entry.
+    ///   - readmeConflictCollector: The collector used to choose an authoritative source for README conflicts.
     /// - Returns: The saved, merged state model.
     /// - Throws: `TreeDocsError` for invalid paths or missing state, plus filesystem/configuration errors from loading, scanning, or saving.
     func sync(

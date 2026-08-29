@@ -4,10 +4,17 @@ import Noora
 struct NooraReadmeConflictCollector: ReadmeConflictCollector {
     private let noora: Noorable
 
+    /// Creates a collector backed by the supplied Noora presenter.
+    ///
+    /// - Parameter noora: Prompt presenter, injectable for alternate terminal environments.
     init(noora: Noorable = Noora()) {
         self.noora = noora
     }
 
+    /// Prompts field by field, with options to apply either source to all remaining conflicts.
+    ///
+    /// - Parameter conflicts: README/treedocs differences to resolve before any files are written.
+    /// - Returns: Complete conflict winners or cancellation.
     func collectResolutions(for conflicts: [ReadmeMetadataConflict]) throws -> ReadmeConflictCollectionResult {
         var resolutions: [String: ReadmeConflictWinner] = [:]
         var defaultWinner: ReadmeConflictWinner?

@@ -2,7 +2,7 @@
 
 Create and maintain a repository map with the `treedocs` command-line interface.
 
-`treedocs` has a sister tool, [`md-utils`](https://github.com/DandyLyons/md-utils), for Markdown parsing, querying, and rewriting. Future integration is planned so repository maps from `treedocs` can work more directly with Markdown operations from `md-utils`.
+`treedocs` uses the library from its sister tool, [`md-utils`](https://github.com/DandyLyons/md-utils), to parse and update supported YAML frontmatter in recursive `README.md` files.
 
 ## Initialize a Repository
 
@@ -42,6 +42,22 @@ treedocs sync -n
 ```
 
 Non-TTY contexts skip interactive UI automatically.
+
+## Import README Documentation
+
+A nested `README.md` can document both its containing folder and itself. Top-level `description` and `references` fields describe the folder; fields inside `readme` describe the file:
+
+```markdown
+---
+description: Core repository services.
+readme:
+  description: Guide to the core implementation.
+---
+
+# Core
+```
+
+`init` imports recognized metadata. `sync` imports missing values and asks which source to keep when README frontmatter disagrees with `treedocs.yaml`. Non-interactive sync reports conflicts without writing, and `check` reports the same drift without modifying files.
 
 Use `check` in local workflows or CI to detect stale signatures and missing descriptions:
 
