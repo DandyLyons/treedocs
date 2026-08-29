@@ -16,6 +16,9 @@ struct TreeScanResult {
     /// Child directories that contain their own `treedocs.yaml` state file.
     var nestedBoundaries: [String]
 
+    /// Visible README files eligible for frontmatter inspection.
+    var readmePaths: [String]
+
     /// The stable signature for `normalizedPaths`.
     var signature: String {
         TreeSignature.make(from: normalizedPaths)
@@ -57,10 +60,22 @@ struct TreeScanner {
     /// - Throws: Filesystem errors from enumerating directories.
     func scan(root: Path, ignoreMatcher: IgnoreMatcher) throws -> TreeScanResult {
         var nestedBoundaries: [String] = []
-        let tree = try buildTree(root: root, relativePath: "", ignoreMatcher: ignoreMatcher, nestedBoundaries: &nestedBoundaries)
+        var readmePaths: [String] = []
+        let tree = try buildTree(
+            root: root,
+            relativePath: "",
+            ignoreMatcher: ignoreMatcher,
+            nestedBoundaries: &nestedBoundaries,
+            readmePaths: &readmePaths
+        )
         var normalizedPaths: [String] = []
         TreeOperations.collectNormalizedPaths(in: tree, into: &normalizedPaths)
-        return TreeScanResult(tree: tree, normalizedPaths: normalizedPaths, nestedBoundaries: nestedBoundaries.sorted())
+        return TreeScanResult(
+            tree: tree,
+            normalizedPaths: normalizedPaths,
+            nestedBoundaries: nestedBoundaries.sorted(),
+            readmePaths: readmePaths.sorted()
+        )
     }
 
     /// Recursively scans children beneath a relative path.
@@ -78,7 +93,8 @@ struct TreeScanner {
         root: Path,
         relativePath: String,
         ignoreMatcher: IgnoreMatcher,
-        nestedBoundaries: inout [String]
+        nestedBoundaries: inout [String],
+        readmePaths: inout [String]
     ) throws -> [String: TreeEntry] {
         let absolutePath = relativePath.isEmpty ? root : root + Path(relativePath)
         let childNames = try fileManager.contentsOfDirectory(atPath: absolutePath.string).sorted()
@@ -100,9 +116,18 @@ struct TreeScanner {
                     continue
                 }
 
-                let children = try buildTree(root: root, relativePath: childRelativePath, ignoreMatcher: ignoreMatcher, nestedBoundaries: &nestedBoundaries)
+                let children = try buildTree(
+                    root: root,
+                    relativePath: childRelativePath,
+                    ignoreMatcher: ignoreMatcher,
+                    nestedBoundaries: &nestedBoundaries,
+                    readmePaths: &readmePaths
+                )
                 result[childName] = TreeEntry(description: "", children: children, isDirectory: true)
             } else {
+                if childName == "README.md" {
+                    readmePaths.append(childRelativePath)
+                }
                 result[childName] = TreeEntry(description: "")
             }
         }

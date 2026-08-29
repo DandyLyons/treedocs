@@ -1,11 +1,12 @@
 # treedocs
 
 ## Project Brief
-- **Language**: Swift 6.0 (SPM)
+- **Language**: Swift 6.2 (SPM)
 - **Platform**: macOS 13+
 - **CLI framework**: apple/swift-argument-parser
 - **Interactive CLI UX**: tuist/Noora
 - **YAML Parsing**: jpsim/Yams
+- **Markdown/frontmatter parsing**: DandyLyons/md-utils (`MarkdownUtilitiesCore`)
 - **Schema Contract**: `treedocs.yaml` should be defined by JSON Schema
 - **Filepath Utilities**: kylef/PathKit
 - **Hashing**: CryptoKit
@@ -53,7 +54,7 @@ swift test --filter "IgnoreMatcher"
 - Shared interactive opt-out: `--non-interactive`
 - `init` writes `treedocs.yaml` with project metadata, signature, and empty descriptions
 - `show` renders the documentation tree for a given path, defaulting to the current directory
-- `sync` preserves existing metadata while reconciling filesystem changes
+- `sync` preserves existing metadata while reconciling filesystem changes and supported `README.md` frontmatter
 - `check` reports signature drift and missing descriptions, and respects configured severity
 - `inspect` resolves `_link` chains and can render a subtree recursively
 - `update` supports description changes plus `--add-reference`, `--remove-reference`, `--link`, and `--clear-link`

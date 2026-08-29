@@ -29,11 +29,18 @@ struct TreedocsSchemaValidator {
         }
 
         let schemaVersion = try schemaVersion(from: parsed)
-        let instanceJSON = try jsonString(from: parsed, label: "treedocs.yaml")
+        try validateSupportedFormatsAndReferences(in: parsed)
+        let instance = try normalize(parsed, path: "#")
         let schemaJSON = try loadSchema(for: schemaVersion, from: schemaPath)
-        let schema = try Schema(instance: schemaJSON)
-        let result = try schema.validate(instance: instanceJSON)
-        guard result.isValid else {
+        guard let schemaData = schemaJSON.data(using: .utf8),
+              let schema = try JSONSerialization.jsonObject(with: schemaData) as? [String: Any] else {
+            throw TreeDocsError.message("Failed to decode the bundled treedocs JSON Schema.")
+        }
+        guard let normalizedSchema = removingFormatAnnotations(from: schema) as? [String: Any] else {
+            throw TreeDocsError.message("Failed to normalize the bundled treedocs JSON Schema.")
+        }
+        let result = try JSONSchema.validate(instance, schema: normalizedSchema)
+        guard result.valid else {
             throw TreeDocsError.message("Schema validation failed: \(formatErrors(result.errors))")
         }
     }
@@ -100,13 +107,70 @@ struct TreedocsSchemaValidator {
         return string
     }
 
-    private func jsonString(from value: Any, label: String) throws -> String {
-        let normalized = try normalize(value, path: "#")
-        let data = try JSONSerialization.data(withJSONObject: normalized, options: [.sortedKeys])
-        guard let string = String(data: data, encoding: .utf8) else {
-            throw TreeDocsError.message("Failed to encode \(label) as JSON for schema validation.")
+    /// JSONSchema.swift reports unsupported format annotations as validation failures. Treedocs uses
+    /// only `format: date`, so validate that contract directly and remove annotations before passing
+    /// the schema to the general validator.
+    private func validateSupportedFormatsAndReferences(in parsed: Any) throws {
+        if let root = parsed as? [String: Any],
+           let project = root["project"] as? [String: Any],
+           let date = project["last_updated"] as? String {
+            let formatter = DateFormatter()
+            formatter.calendar = Calendar(identifier: .gregorian)
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.isLenient = false
+            guard date.range(of: "^\\d{4}-\\d{2}-\\d{2}$", options: .regularExpression) != nil,
+                  formatter.date(from: date) != nil else {
+                throw TreeDocsError.message("Schema validation failed: #/project/last_updated: must be a valid YYYY-MM-DD date.")
+            }
         }
-        return string
+
+        if let root = parsed as? [String: Any], let tree = root["tree"] {
+            try validateReferences(in: tree, path: "#/tree")
+        }
+    }
+
+    private func validateReferences(in value: Any, path: String) throws {
+        if let mapping = value as? [String: Any] {
+            for key in ["_references", "references"] {
+                if let references = mapping[key] as? [Any] {
+                    for (index, item) in references.enumerated() {
+                        guard let reference = item as? String, isValidReference(reference) else {
+                            throw TreeDocsError.message("Schema validation failed: \(path)/\(key)/\(index): must be a local path, HTTPS URL, or Markdown link.")
+                        }
+                    }
+                }
+            }
+            for (key, child) in mapping {
+                try validateReferences(in: child, path: "\(path)/\(key)")
+            }
+        } else if let array = value as? [Any] {
+            for (index, child) in array.enumerated() {
+                try validateReferences(in: child, path: "\(path)/\(index)")
+            }
+        }
+    }
+
+    private func isValidReference(_ reference: String) -> Bool {
+        if reference.hasPrefix("https://"), !reference.contains(where: \.isWhitespace) {
+            return true
+        }
+        if reference.range(of: "^\\[[^\\]\\n]+\\]\\((?:https://\\S+|(?!(?:[A-Za-z][A-Za-z0-9+.-]*:))(?=.*\\S)[^)\\n]+)\\)$", options: .regularExpression) != nil {
+            return true
+        }
+        return reference.range(of: "^(?!\\[)(?![A-Za-z][A-Za-z0-9+.-]*:)(?=.*\\S)[^\\n]+$", options: .regularExpression) != nil
+    }
+
+    private func removingFormatAnnotations(from value: Any) -> Any {
+        if let mapping = value as? [String: Any] {
+            return Dictionary(uniqueKeysWithValues: mapping.compactMap { key, child in
+                key == "format" ? nil : (key, removingFormatAnnotations(from: child))
+            })
+        }
+        if let array = value as? [Any] {
+            return array.map(removingFormatAnnotations)
+        }
+        return value
     }
 
     private func normalize(_ value: Any, path: String) throws -> Any {
@@ -139,21 +203,13 @@ struct TreedocsSchemaValidator {
     }
 
     private func formatErrors(_ errors: [ValidationError]?) -> String {
-        let flattened = flatten(errors ?? [])
-        guard !flattened.isEmpty else {
+        let errors = errors ?? []
+        guard !errors.isEmpty else {
             return "document does not match a bundled treedocs schema."
         }
-        return flattened.map { error in
-            "\(error.instanceLocation): \(error.message)"
+        return errors.map { error in
+            let location = error.instanceLocation.path.isEmpty ? "#" : "#\(error.instanceLocation.path)"
+            return "\(location): \(error.description)"
         }.joined(separator: "; ")
-    }
-
-    private func flatten(_ errors: [ValidationError]) -> [ValidationError] {
-        errors.flatMap { error -> [ValidationError] in
-            if let nested = error.errors, !nested.isEmpty {
-                return flatten(nested)
-            }
-            return [error]
-        }
     }
 }

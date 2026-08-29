@@ -68,6 +68,20 @@ final class StubMissingDescriptionCollector: MissingDescriptionCollector {
     }
 }
 
+final class StubReadmeConflictCollector: ReadmeConflictCollector {
+    let result: ReadmeConflictCollectionResult
+    private(set) var requestedConflicts: [ReadmeMetadataConflict] = []
+
+    init(result: ReadmeConflictCollectionResult) {
+        self.result = result
+    }
+
+    func collectResolutions(for conflicts: [ReadmeMetadataConflict]) throws -> ReadmeConflictCollectionResult {
+        requestedConflicts = conflicts
+        return result
+    }
+}
+
 func withRainbowConsoleOutput<T>(_ operation: () throws -> T) rethrows -> T {
     let previousEnabled = Rainbow.enabled
     let previousOutputTarget = Rainbow.outputTarget

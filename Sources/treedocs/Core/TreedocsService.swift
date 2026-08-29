@@ -38,6 +38,15 @@ struct CheckReport {
     /// Stored descendant paths shadowed by a child `treedocs.yaml` boundary.
     var shadowedPaths: [String]
 
+    /// Non-failing limitations discovered while reading README metadata.
+    var readmeWarnings: [String]
+
+    /// README metadata that has not yet been imported into treedocs.yaml.
+    var pendingReadmeImports: [String]
+
+    /// Conflicting values stored in README frontmatter and treedocs.yaml.
+    var readmeConflicts: [ReadmeMetadataConflict]
+
     /// The configured failure policy for check results.
     var severity: CheckSeverity
 
@@ -55,6 +64,8 @@ struct CheckReport {
             || !extraPaths.isEmpty
             || !changedPaths.isEmpty
             || !shadowedPaths.isEmpty
+            || !pendingReadmeImports.isEmpty
+            || !readmeConflicts.isEmpty
     }
 
     /// Whether the configured severity should fail the command.
@@ -70,6 +81,8 @@ struct CheckReport {
             || !extraPaths.isEmpty
             || !changedPaths.isEmpty
             || !shadowedPaths.isEmpty
+            || !pendingReadmeImports.isEmpty
+            || !readmeConflicts.isEmpty
     }
 }
 
@@ -107,6 +120,9 @@ struct SyncResult {
 
     /// Relative paths for entries that still need descriptions after sync handling.
     var missingDescriptions: [String]
+
+    /// Non-failing README import limitations encountered during sync.
+    var readmeWarnings: [String]
 }
 
 /// Structural filesystem changes detected during sync.
@@ -132,6 +148,9 @@ struct TreedocsService {
     var scanner = TreeScanner()
     var renderer = TreeRenderer()
     var linkResolver = LinkResolver()
+    var readmeLoader = ReadmeDocumentationLoader()
+    var readmeReconciler = ReadmeReconciler()
+    var transactionWriter: any TransactionalFileWriting = TransactionalFileWriter()
 
     /// Creates a fresh `treedocs.yaml` for a repository.
     ///
@@ -152,6 +171,11 @@ struct TreedocsService {
 
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: nil)
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let readmes = try readmeLoader.load(root: repositoryPaths.root, readmePaths: scan.readmePaths)
+        let reconciliation = readmeReconciler.reconcile(sources: readmes, tree: scan.tree)
+        for warning in reconciliation.warnings {
+            fputs("Warning: \(warning)\n", stderr)
+        }
         let file = TreedocsFile(
             project: ProjectMetadata(
                 name: repositoryPaths.root.lastComponent,
@@ -159,7 +183,7 @@ struct TreedocsService {
                 lastUpdated: currentDateString()
             ),
             signature: scan.signature,
-            tree: scan.tree
+            tree: reconciliation.tree
         )
         try store.save(file, at: repositoryPaths.stateFile)
         return file
@@ -180,12 +204,14 @@ struct TreedocsService {
     func sync(
         at rootPath: String,
         interactive: Bool,
-        missingDescriptionCollector: MissingDescriptionCollector? = nil
+        missingDescriptionCollector: MissingDescriptionCollector? = nil,
+        readmeConflictCollector: ReadmeConflictCollector? = nil
     ) throws -> TreedocsFile {
         try syncResult(
             at: rootPath,
             interactive: interactive,
-            missingDescriptionCollector: missingDescriptionCollector
+            missingDescriptionCollector: missingDescriptionCollector,
+            readmeConflictCollector: readmeConflictCollector
         ).file
     }
 
@@ -193,9 +219,11 @@ struct TreedocsService {
     func syncResult(
         at rootPath: String,
         interactive: Bool,
-        missingDescriptionCollector: MissingDescriptionCollector? = nil
+        missingDescriptionCollector: MissingDescriptionCollector? = nil,
+        readmeConflictCollector: ReadmeConflictCollector? = nil
     ) throws -> SyncResult {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
+        let originalStateSource: String = try repositoryPaths.stateFile.read()
         let current = try store.load(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
@@ -204,12 +232,41 @@ struct TreedocsService {
             removedPaths: TreeOperations.extraPaths(stored: current.tree, scanned: scan.tree),
             changedTypePaths: TreeOperations.changedPaths(stored: current.tree, scanned: scan.tree)
         )
+        let readmes = try readmeLoader.load(root: repositoryPaths.root, readmePaths: scan.readmePaths)
+        var reconciliation = readmeReconciler.reconcile(
+            sources: readmes,
+            tree: TreeOperations.mergePreservingMetadata(scanned: scan.tree, existing: current.tree)
+        )
+
+        if !reconciliation.conflicts.isEmpty {
+            guard interactive else {
+                let details = reconciliation.conflicts.map { "- \($0.diagnostic)" }.joined(separator: "\n")
+                throw TreeDocsError.message("README metadata conflicts found; no files were changed:\n\(details)")
+            }
+            guard let readmeConflictCollector else {
+                throw TreeDocsError.message("Interactive sync requires a README conflict collector.")
+            }
+            switch try readmeConflictCollector.collectResolutions(for: reconciliation.conflicts) {
+            case let .resolve(resolutions):
+                try reconciliation.apply(resolutions: resolutions)
+            case .cancel:
+                return SyncResult(
+                    file: current,
+                    saved: false,
+                    signatureUnchanged: current.signature == scan.signature,
+                    changes: changes,
+                    missingDescriptions: TreeOperations.missingDescriptionPaths(in: current.tree),
+                    readmeWarnings: reconciliation.warnings
+                )
+            }
+        }
+
         var merged = TreedocsFile(
             schemaVersion: current.schemaVersion,
             project: current.project,
             overrides: current.overrides,
             signature: scan.signature,
-            tree: TreeOperations.mergePreservingMetadata(scanned: scan.tree, existing: current.tree)
+            tree: reconciliation.tree
         )
 
         if interactive {
@@ -228,19 +285,35 @@ struct TreedocsService {
                         saved: false,
                         signatureUnchanged: current.signature == scan.signature,
                         changes: changes,
-                        missingDescriptions: TreeOperations.missingDescriptionPaths(in: current.tree)
+                        missingDescriptions: TreeOperations.missingDescriptionPaths(in: current.tree),
+                        readmeWarnings: reconciliation.warnings
                     )
                 }
             }
         }
 
-        try store.save(merged, at: repositoryPaths.stateFile)
+        let updatedStateSource = try store.serializedDocument(for: merged)
+        try store.validator.validate(yaml: updatedStateSource)
+        var writes = try reconciliation.sources.map { source in
+            PlannedTextFileWrite(
+                path: repositoryPaths.root + Path(source.path),
+                expectedSource: source.originalSource,
+                updatedSource: try source.renderedSource()
+            )
+        }
+        writes.append(PlannedTextFileWrite(
+            path: repositoryPaths.stateFile,
+            expectedSource: originalStateSource,
+            updatedSource: updatedStateSource
+        ))
+        try transactionWriter.write(writes)
         return SyncResult(
             file: merged,
             saved: true,
             signatureUnchanged: current.signature == scan.signature,
             changes: changes,
-            missingDescriptions: TreeOperations.missingDescriptionPaths(in: merged.tree)
+            missingDescriptions: TreeOperations.missingDescriptionPaths(in: merged.tree),
+            readmeWarnings: reconciliation.warnings
         )
     }
 
@@ -271,6 +344,8 @@ struct TreedocsService {
         let current = try store.loadWithoutSchemaValidation(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let readmes = try readmeLoader.load(root: repositoryPaths.root, readmePaths: scan.readmePaths)
+        let reconciliation = readmeReconciler.reconcile(sources: readmes, tree: current.tree)
         let missingDescriptions = TreeOperations.missingDescriptionPaths(in: current.tree)
         return CheckReport(
             schemaWarnings: TreedocsSchemaMetadata.deprecationWarnings(for: current.schemaVersion),
@@ -283,6 +358,9 @@ struct TreedocsService {
             changedPaths: TreeOperations.changedPaths(stored: current.tree, scanned: scan.tree),
             nestedBoundaries: scan.nestedBoundaries,
             shadowedPaths: TreeOperations.shadowedPaths(stored: current.tree, nestedBoundaries: scan.nestedBoundaries),
+            readmeWarnings: reconciliation.warnings,
+            pendingReadmeImports: reconciliation.pendingImports,
+            readmeConflicts: reconciliation.conflicts,
             severity: loaded.config.resolvedCheckSeverity
         )
     }
@@ -512,6 +590,8 @@ struct TreedocsService {
             + report.extraPaths
             + report.changedPaths
             + report.shadowedPaths
+            + report.pendingReadmeImports.map { $0.components(separatedBy: " [").first ?? $0 }
+            + report.readmeConflicts.map(\.targetPath)
         return scopedPaths.contains { isPath($0, inside: subtreePath) }
     }
 

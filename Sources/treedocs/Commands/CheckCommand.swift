@@ -21,6 +21,7 @@ struct CheckCommand: ParsableCommand {
 
         printSection("Schema warnings", values: report.schemaWarnings)
         printSection("Schema validation failures", values: report.schemaErrors)
+        printSection("README warnings", values: report.readmeWarnings)
 
         if report.hasSignatureDrift {
             print("Stale tree: stored signature \(report.storedSignature ?? "<missing>") does not match current signature \(report.currentSignature)")
@@ -32,6 +33,8 @@ struct CheckCommand: ParsableCommand {
         printSection("Nested documentation boundaries", values: report.nestedBoundaries)
         printSection("Shadowed child-owned paths", values: report.shadowedPaths)
         printSection("Missing descriptions", values: report.missingDescriptions)
+        printSection("README metadata pending import", values: report.pendingReadmeImports)
+        printSection("README metadata conflicts", values: report.readmeConflicts.map(\.diagnostic))
 
         if !report.hasIssues && report.schemaWarnings.isEmpty {
             print("Tree is up to date.")
@@ -57,6 +60,9 @@ struct CheckCommand: ParsableCommand {
         }
         if !report.missingDescriptions.isEmpty {
             steps.append(Self.missingDescriptionNextStep)
+        }
+        if !report.pendingReadmeImports.isEmpty || !report.readmeConflicts.isEmpty {
+            steps.append("Run `treedocs sync` to import or reconcile README frontmatter metadata.")
         }
 
         return steps

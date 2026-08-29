@@ -25,8 +25,12 @@ struct SyncCommand: ParsableCommand {
         let result = try TreedocsService().syncResult(
             at: options.path,
             interactive: interactive,
-            missingDescriptionCollector: interactive ? NooraMissingDescriptionCollector() : nil
+            missingDescriptionCollector: interactive ? NooraMissingDescriptionCollector() : nil,
+            readmeConflictCollector: interactive ? NooraReadmeConflictCollector() : nil
         )
+        for warning in result.readmeWarnings {
+            fputs("Warning: \(warning)\n", stderr)
+        }
         if result.saved {
             if result.signatureUnchanged {
                 print(Self.noChangeMessage())

@@ -4,7 +4,7 @@ project:
   last_updated: "2026-05-08"
   name: treedocs
   version: 0.1.0
-signature: sha256:02e78d9150f1b702c265114a8bd710afe083b3528fe58175bd16ebe10c01adda
+signature: sha256:4423c44475b99cba10540c880977909608a891b6b58f4e641ee1c167adbb4893
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
@@ -59,6 +59,8 @@ tree:
         LsCommand.swift: Renders the documented repository tree or a requested subtree.
         NooraMissingDescriptionCollector.swift: Collects paths that are missing descriptions
           in the treedocs.yaml using Noora for interactive CLI prompts.
+        NooraReadmeConflictCollector.swift: Interactive Noora UI for resolving README
+          metadata conflicts.
         PathCommand.swift: Finds the first documented path matching a query across
           paths and descriptions.
         PromptsCommand.swift: Generates maintenance prompts for filling missing treedocs
@@ -83,6 +85,12 @@ tree:
           in the treedocs.yaml
         PathUtilities.swift: Defines shared errors, string cleanup helpers, and repository-relative
           path utilities.
+        ReadmeConflictCollector.swift: Conflict-resolution protocol and result types
+          for README reconciliation.
+        ReadmeDocumentation.swift: README frontmatter adapter, reference normalization,
+          and reconciliation logic.
+        TransactionalFileWriter.swift: Revision-checked multi-file writes with rollback
+          on failure.
         TreeOperations.swift: Mutates and queries documentation tree entries.
         TreeRenderer.swift: Formats documentation trees for CLI output.
         TreeScanner.swift: Scans repository files into the canonical documentation
@@ -113,6 +121,10 @@ tree:
       _doc: Unit and workflow tests for the treedocs package.
       IgnoreMatcherTests.swift: Tests ignore pattern loading, matching, and negation
         behavior.
+      ReadmeDocumentationTests.swift: Focused tests for README metadata mapping, reconciliation,
+        references, and transactions.
+      ReadmeWorkflowTests.swift: End-to-end tests for README imports, conflicts, cancellation,
+        and sync behavior.
       ScannerAndSignatureTests.swift: Tests filesystem scanning and signature generation.
       SchemaAndConfigTests.swift: Tests YAML schema parsing, configuration precedence,
         and tree entry serialization.

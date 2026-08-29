@@ -10,6 +10,7 @@
 - Stores project metadata, documentation, references, and internal links
 - Defines the `treedocs.yaml` contract with JSON Schema for reusable validation
 - Reconciles disk changes back into the YAML state
+- Imports folder and README-file documentation from `README.md` YAML frontmatter
 - Fails CI-style checks when the tree is stale or descriptions are missing
 - Renders a documented tree and resolves links for inspection
 - Finds relevant paths from a query for shell workflows
@@ -17,7 +18,7 @@
 ## Installation
 `treedocs` currently supports macOS 13 and newer. Windows and Linux are not supported yet; please open a GitHub issue if you want either platform supported.
 
-GitHub Releases are the canonical release record. Package-manager distribution builds from source instead of shipping prebuilt binaries, so installing through Homebrew, Mint, or mise requires a Swift 6-capable build environment, usually Xcode 16+.
+GitHub Releases are the canonical release record. Package-manager distribution builds from source instead of shipping prebuilt binaries, so installing through Homebrew, Mint, or mise requires a Swift 6.2-capable build environment.
 
 ### Swift Package Manager
 From a local checkout:
@@ -103,6 +104,30 @@ treedocs sync -n
 ```
 
 Non-TTY contexts, such as CI and redirected input/output, skip interactive UI automatically.
+
+## README Frontmatter
+
+`treedocs init` and `treedocs sync` discover exact `README.md` filenames through the normal scanner, so ignore rules and nested `treedocs.yaml` boundaries still apply. A nested README can document both its containing folder and the README file:
+
+```markdown
+---
+description: Core scanning and reconciliation logic.
+references:
+  - ../../DOCS/architecture.md
+readme:
+  description: How the core implementation is organized.
+  references:
+    - "[Architecture](../../DOCS/architecture.md)"
+---
+
+# Core
+```
+
+Top-level `description` and `references` describe the containing folder. Values under `readme` describe the `README.md` file itself. Local references are resolved relative to the README's folder; HTTPS URLs are preserved. Other frontmatter keys and the Markdown body are retained when treedocs updates supported metadata.
+
+The repository-root README can document its own file through `readme.*`. Root-folder documentation is deferred because the current `0.2.0` tree format has no root `_doc` entry; top-level folder fields there produce a non-failing warning. `_link` is not imported from README frontmatter.
+
+When README and `treedocs.yaml` values differ, interactive sync asks which value to keep. Non-interactive sync reports all conflicts, writes nothing, and exits nonzero. `treedocs check` reports pending imports and conflicts without modifying either file. A recognized README without a usable `readme.description` receives a sensible file-description default in `treedocs.yaml`; treedocs-only values are not automatically copied into README frontmatter.
 
 ## Git Commit Hook
 `treedocs` can run from a Git `pre-commit` hook so commits stop when `treedocs.yaml` is stale or incomplete. This repository vends a suggested hook at `contrib/hooks/pre-commit`; users are responsible for reviewing and installing it in their own repositories.
