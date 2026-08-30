@@ -120,16 +120,35 @@ readme:
   description: How the core implementation is organized.
   references:
     - "[Architecture](../../DOCS/architecture.md)"
+tree:
+  ReadmeDocumentation.swift:
+    description: Parses and reconciles supported README frontmatter.
+  Persistence:
+    _doc:
+      description: Transactional storage infrastructure.
+    TransactionalFileWriter.swift:
+      description: Writes coordinated changes with rollback on failure.
 ---
 
 # Core
 ```
 
-Top-level `description` and `references` describe the containing folder. Values under `readme` describe the `README.md` file itself. Local references are resolved relative to the README's folder; HTTPS URLs are preserved. Other frontmatter keys and the Markdown body are retained when treedocs updates supported metadata.
+Top-level `description` and `references` describe the containing folder. Values under `readme` describe the `README.md` file itself. The optional `tree` mapping describes any sparse subset of descendants: file metadata appears on the file entry, directory metadata is stored under `_doc`, and nested mappings may recurse to any depth. Tree paths are relative to the README's folder and cannot escape its subtree.
+
+Local references are resolved relative to the README's folder; HTTPS URLs are preserved. Other frontmatter keys and the Markdown body are retained when treedocs updates supported metadata.
 
 The repository-root README can document its own file through `readme.*`. Root-folder documentation is deferred because the current `0.2.0` tree format has no root `_doc` entry; top-level folder fields there produce a non-failing warning. `_link` is not imported from README frontmatter.
 
-When README and `treedocs.yaml` values differ, interactive sync asks which value to keep. Non-interactive sync reports all conflicts, writes nothing, and exits nonzero. `treedocs check` reports pending imports and conflicts without modifying either file. A recognized README without a usable `readme.description` receives a sensible file-description default in `treedocs.yaml`; treedocs-only values are not automatically copied into README frontmatter.
+When any number of READMEs and `treedocs.yaml` disagree about the same path and field, interactive sync presents every distinct value once. The selected value is written to `treedocs.yaml` and every README that already expresses that field. Non-interactive sync reports all conflicts, writes nothing, and exits nonzero. `treedocs check` reports pending imports and conflicts without modifying files.
+
+README trees remain sparse by default: an omitted descendant means that README has no opinion and is not treated as a deletion. Explicitly populate missing descriptions from the resolved `treedocs.yaml` tree with one of these scopes:
+
+```bash
+treedocs sync --populate-readmes children
+treedocs sync --populate-readmes recursive
+```
+
+`children` adds immediate child descriptions and `recursive` adds every owned descendant description. Population applies only to recognized READMEs that already contain supported treedocs frontmatter; it never introduces frontmatter into a plain README. Ignore rules and nested `treedocs.yaml` ownership boundaries still apply. A recognized README without a usable `readme.description` receives a sensible file-description default in `treedocs.yaml`.
 
 ### Create README Stubs
 

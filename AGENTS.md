@@ -19,6 +19,8 @@ swift build
 treedocs --help # shows root command help
 treedocs init # initializes treedocs.yaml
 treedocs sync # syncs treedocs.yaml with filesystem changes
+treedocs sync --populate-readmes children # copies immediate child descriptions into recognized README trees
+treedocs sync --populate-readmes recursive # copies all owned descendant descriptions into recognized README trees
 treedocs createREADME Sources/ # creates a README stub for Sources/
 treedocs createREADME Sources/ --recursive # creates stubs in eligible descendant directories
 treedocs show . # shows the documentation tree for the current directory
@@ -56,7 +58,7 @@ swift test --filter "IgnoreMatcher"
 - Shared interactive opt-out: `--non-interactive`
 - `init` writes `treedocs.yaml` with project metadata, signature, and empty descriptions
 - `show` renders the documentation tree for a given path, defaulting to the current directory
-- `sync` preserves existing metadata while reconciling filesystem changes and supported `README.md` frontmatter
+- `sync` preserves existing metadata while reconciling filesystem changes and sparse recursive `README.md` frontmatter; `--populate-readmes children|recursive` explicitly copies missing canonical descriptions into recognized README trees
 - `check` reports signature drift and missing descriptions, and respects configured severity
 - `inspect` resolves `_link` chains and can render a subtree recursively
 - `update` supports description changes plus `--add-reference`, `--remove-reference`, `--link`, and `--clear-link`

@@ -5,6 +5,114 @@ import Testing
 @Suite("README Documentation")
 struct ReadmeDocumentationTests {
     @Test
+    func `README adapter parses sparse recursive descendant tree`() throws {
+        let candidate = try ReadmeDocumentationLoader().parse(
+            source: """
+            ---
+            readme:
+              description: Source guide.
+            tree:
+              TreeDocs.swift: Defines the executable entry point.
+              Commands:
+                _doc:
+                  description: Command implementations.
+                  references: [../DOCS/Commands.md]
+                SyncCommand.swift:
+                  description: Reconciles documentation state.
+            ---
+            # Sources
+            """,
+            relativePath: "Sources/README.md"
+        )
+        let parsed = try #require(candidate)
+
+        #expect(parsed.descendants.count == 3)
+        #expect(parsed.descendants.first(where: { $0.targetPath == "Sources/TreeDocs.swift" })?.metadata.description == "Defines the executable entry point.")
+        #expect(parsed.descendants.first(where: { $0.targetPath == "Sources/Commands" })?.isDirectory == true)
+        #expect(parsed.descendants.first(where: { $0.targetPath == "Sources/Commands" })?.metadata.references == ["DOCS/Commands.md"])
+        #expect(parsed.descendants.first(where: { $0.targetPath == "Sources/Commands/SyncCommand.swift" })?.metadata.description == "Reconciles documentation state.")
+    }
+
+    @Test
+    func `Empty tree opts README into documentation without requiring entries`() throws {
+        let parsed = try ReadmeDocumentationLoader().parse(
+            source: """
+            ---
+            tree: {}
+            ---
+            # Guide
+            """,
+            relativePath: "Guide/README.md"
+        )
+
+        #expect(parsed != nil)
+        #expect(parsed?.descendants.isEmpty == true)
+    }
+
+    @Test
+    func `README tree rejects paths outside its subtree`() {
+        #expect(throws: TreeDocsError.self) {
+            try ReadmeDocumentationLoader().parse(
+                source: """
+                ---
+                tree:
+                  ../LICENSE: Not allowed.
+                ---
+                # Guide
+                """,
+                relativePath: "Sources/README.md"
+            )
+        }
+    }
+
+    @Test
+    func `Grouped conflict selects once and updates all README sources`() throws {
+        let root = try #require(try ReadmeDocumentationLoader().parse(
+            source: """
+            ---
+            readme:
+              description: Project guide.
+            tree:
+              Sources:
+                File.swift:
+                  description: Root README value.
+            ---
+            # Project
+            """,
+            relativePath: "README.md"
+        ))
+        let nested = try #require(try ReadmeDocumentationLoader().parse(
+            source: """
+            ---
+            tree:
+              File.swift:
+                description: Nested README value.
+            ---
+            # Sources
+            """,
+            relativePath: "Sources/README.md"
+        ))
+        let tree = [
+            "README.md": TreeEntry(description: "Project guide."),
+            "Sources": TreeEntry(description: "Sources.", children: [
+                "README.md": TreeEntry(description: "Sources guide."),
+                "File.swift": TreeEntry(description: "Treedocs value."),
+            ], isDirectory: true),
+        ]
+
+        var result = ReadmeReconciler().reconcile(sources: [root, nested], tree: tree)
+        let conflict = try #require(result.conflicts.first(where: { $0.targetPath == "Sources/File.swift" }))
+        #expect(conflict.readmeValues.count == 2)
+        #expect(conflict.values.count == 3)
+
+        try result.apply(resolutions: [conflict.id: .value(.description("Nested README value."))])
+
+        #expect(TreeOperations.entry(at: "Sources/File.swift", in: result.tree)?.description == "Nested README value.")
+        #expect(try result.sources[0].renderedSource().contains("description: Nested README value."))
+        #expect(try result.sources[1].renderedSource().contains("description: Nested README value."))
+    }
+
+    @Test
     func `README adapter maps supported fields and preserves unrelated content`() throws {
         let source = """
         ---
@@ -123,7 +231,7 @@ struct ReadmeDocumentationTests {
         )
 
         #expect(TreeOperations.entry(at: "README.md", in: result.tree)?.description == "Project guide.")
-        #expect(result.warnings == ["README.md: root-folder README metadata is deferred; only readme.* metadata is used."])
+        #expect(result.warnings == ["README.md: root-folder README metadata is deferred; readme.* and tree metadata are still used."])
         #expect(TreeOperations.entry(at: "_doc", in: result.tree) == nil)
     }
 
@@ -195,7 +303,7 @@ struct ReadmeDocumentationTests {
         var result = ReadmeReconciler().reconcile(sources: [source], tree: tree)
         let conflict = try #require(result.conflicts.first)
 
-        try result.apply(resolutions: [conflict.id: .treedocs])
+        try result.apply(resolutions: [conflict.id: .value(try #require(conflict.treedocsValue))])
         let rendered = try #require(result.sources.first).renderedSource()
         #expect(rendered.contains("description: Treedocs value."))
         #expect(rendered.contains("title: Preserved"))

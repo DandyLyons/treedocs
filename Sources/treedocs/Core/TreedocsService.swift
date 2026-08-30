@@ -206,6 +206,10 @@ struct TreedocsService {
         let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
         let readmes = try readmeLoader.load(root: repositoryPaths.root, readmePaths: scan.readmePaths)
         let reconciliation = readmeReconciler.reconcile(sources: readmes, tree: scan.tree)
+        if !reconciliation.conflicts.isEmpty {
+            let details = reconciliation.conflicts.map { "- \($0.diagnostic)" }.joined(separator: "\n")
+            throw TreeDocsError.message("README metadata conflicts found; treedocs.yaml was not created:\n\(details)")
+        }
         for warning in reconciliation.warnings {
             fputs("Warning: \(warning)\n", stderr)
         }
@@ -233,19 +237,22 @@ struct TreedocsService {
     ///   - interactive: Whether to collect missing descriptions while syncing.
     ///   - missingDescriptionCollector: The collector used for interactive description entry.
     ///   - readmeConflictCollector: The collector used to choose an authoritative source for README conflicts.
+    ///   - populateReadmes: Optional descendant depth to copy from resolved treedocs metadata into recognized READMEs.
     /// - Returns: The saved, merged state model.
     /// - Throws: `TreeDocsError` for invalid paths or missing state, plus filesystem/configuration errors from loading, scanning, or saving.
     func sync(
         at rootPath: String,
         interactive: Bool,
         missingDescriptionCollector: MissingDescriptionCollector? = nil,
-        readmeConflictCollector: ReadmeConflictCollector? = nil
+        readmeConflictCollector: ReadmeConflictCollector? = nil,
+        populateReadmes: ReadmePopulationDepth? = nil
     ) throws -> TreedocsFile {
         try syncResult(
             at: rootPath,
             interactive: interactive,
             missingDescriptionCollector: missingDescriptionCollector,
-            readmeConflictCollector: readmeConflictCollector
+            readmeConflictCollector: readmeConflictCollector,
+            populateReadmes: populateReadmes
         ).file
     }
 
@@ -254,7 +261,8 @@ struct TreedocsService {
         at rootPath: String,
         interactive: Bool,
         missingDescriptionCollector: MissingDescriptionCollector? = nil,
-        readmeConflictCollector: ReadmeConflictCollector? = nil
+        readmeConflictCollector: ReadmeConflictCollector? = nil,
+        populateReadmes: ReadmePopulationDepth? = nil
     ) throws -> SyncResult {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
         let originalStateSource: String = try repositoryPaths.stateFile.read()
@@ -324,6 +332,10 @@ struct TreedocsService {
                     )
                 }
             }
+        }
+
+        if let populateReadmes {
+            try reconciliation.populateReadmes(from: merged.tree, depth: populateReadmes)
         }
 
         let updatedStateSource = try store.serializedDocument(for: merged)

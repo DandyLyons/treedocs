@@ -52,12 +52,31 @@ A nested `README.md` can document both its containing folder and itself. Top-lev
 description: Core repository services.
 readme:
   description: Guide to the core implementation.
+tree:
+  ReadmeDocumentation.swift:
+    description: Parses and reconciles supported README frontmatter.
+  Persistence:
+    _doc:
+      description: Transactional storage infrastructure.
+    TransactionalFileWriter.swift:
+      description: Writes coordinated changes with rollback on failure.
 ---
 
 # Core
 ```
 
-`init` imports recognized metadata. `sync` imports missing values and asks which source to keep when README frontmatter disagrees with `treedocs.yaml`. Non-interactive sync reports conflicts without writing, and `check` reports the same drift without modifying files.
+The optional `tree` mapping can document any sparse subset of descendants. File metadata appears on the file entry, directory metadata is nested under `_doc`, and paths are relative to the README's containing folder.
+
+`init` imports recognized metadata. `sync` imports missing values and groups disagreements across `treedocs.yaml` and every README that describes the same path and field. One interactive choice updates all participating sources. Non-interactive sync reports conflicts without writing, and `check` reports the same drift without modifying files.
+
+Normal sync leaves omitted README entries alone. Explicitly copy missing canonical descriptions into recognized README trees at either depth:
+
+```bash
+treedocs sync --populate-readmes children
+treedocs sync --populate-readmes recursive
+```
+
+Population does not add frontmatter to plain READMEs and stops at ignore and nested ownership boundaries.
 
 Create a structured README from directory documentation already stored in `treedocs.yaml`:
 

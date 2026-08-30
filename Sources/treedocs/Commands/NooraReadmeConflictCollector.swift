@@ -11,38 +11,36 @@ struct NooraReadmeConflictCollector: ReadmeConflictCollector {
         self.noora = noora
     }
 
-    /// Prompts field by field, with options to apply either source to all remaining conflicts.
+    /// Prompts once per path and field with every distinct value from all participating sources.
     ///
     /// - Parameter conflicts: README/treedocs differences to resolve before any files are written.
     /// - Returns: Complete conflict winners or cancellation.
     func collectResolutions(for conflicts: [ReadmeMetadataConflict]) throws -> ReadmeConflictCollectionResult {
         var resolutions: [String: ReadmeConflictWinner] = [:]
-        var defaultWinner: ReadmeConflictWinner?
-
+        var remainingSource: ConflictSourcePreference?
         for conflict in conflicts {
-            if let defaultWinner {
-                resolutions[conflict.id] = defaultWinner
+            if let value = remainingSource?.value(in: conflict) {
+                resolutions[conflict.id] = .value(value)
                 continue
             }
+            let choices = choices(for: conflict)
 
             let selected = noora.singleChoicePrompt(
                 title: "README metadata conflict",
                 question: TerminalText(stringLiteral: "\(conflict.targetPath) [\(conflict.field.rawValue)]"),
-                options: ReadmeConflictChoice.all,
-                description: TerminalText(
-                    stringLiteral: "README: \(conflict.readmeValue)\ntreedocs: \(conflict.treedocsValue)"
-                ),
+                options: choices,
+                description: TerminalText(stringLiteral: conflict.diagnostic),
                 collapseOnSelection: true,
                 filterMode: .disabled,
                 autoselectSingleChoice: false
             )
 
             switch selected.action {
-            case let .keep(winner):
-                resolutions[conflict.id] = winner
-            case let .keepRemaining(winner):
-                resolutions[conflict.id] = winner
-                defaultWinner = winner
+            case let .keep(value):
+                resolutions[conflict.id] = .value(value)
+            case let .keepRemaining(preference, value):
+                resolutions[conflict.id] = .value(value)
+                remainingSource = preference
             case .cancel:
                 return .cancel
             }
@@ -50,23 +48,60 @@ struct NooraReadmeConflictCollector: ReadmeConflictCollector {
 
         return .resolve(resolutions)
     }
+
+    private func choices(for conflict: ReadmeMetadataConflict) -> [ReadmeConflictChoice] {
+        var choices = conflict.values.map { value in
+            var labels = conflict.readmeValues
+                .filter { $0.value == value }
+                .map(\.readmePath)
+            if conflict.treedocsValue == value {
+                labels.append("treedocs.yaml")
+            }
+            return ReadmeConflictChoice(
+                action: .keep(value),
+                description: "Keep \(value) (\(labels.joined(separator: ", ")))"
+            )
+        }
+
+        if let treedocsValue = conflict.treedocsValue {
+            choices.append(ReadmeConflictChoice(
+                action: .keepRemaining(.treedocs, treedocsValue),
+                description: "Keep treedocs for all remaining conflicts"
+            ))
+        }
+        var seenReadmes = Set<String>()
+        for source in conflict.readmeValues where seenReadmes.insert(source.readmePath).inserted {
+            choices.append(ReadmeConflictChoice(
+                action: .keepRemaining(.readme(source.readmePath), source.value),
+                description: "Keep \(source.readmePath) for all remaining conflicts where it participates"
+            ))
+        }
+        choices.append(ReadmeConflictChoice(action: .cancel, description: "Cancel (discard changes)"))
+        return choices
+    }
+}
+
+private enum ConflictSourcePreference: Equatable {
+    case treedocs
+    case readme(String)
+
+    func value(in conflict: ReadmeMetadataConflict) -> ReadmeConflictValue? {
+        switch self {
+        case .treedocs:
+            conflict.treedocsValue
+        case let .readme(path):
+            conflict.readmeValues.first(where: { $0.readmePath == path })?.value
+        }
+    }
 }
 
 private struct ReadmeConflictChoice: Equatable, CustomStringConvertible {
     enum Action: Equatable {
-        case keep(ReadmeConflictWinner)
-        case keepRemaining(ReadmeConflictWinner)
+        case keep(ReadmeConflictValue)
+        case keepRemaining(ConflictSourcePreference, ReadmeConflictValue)
         case cancel
     }
 
     let action: Action
     let description: String
-
-    static let all = [
-        ReadmeConflictChoice(action: .keep(.readme), description: "Keep README"),
-        ReadmeConflictChoice(action: .keep(.treedocs), description: "Keep treedocs"),
-        ReadmeConflictChoice(action: .keepRemaining(.readme), description: "Keep README for all remaining conflicts"),
-        ReadmeConflictChoice(action: .keepRemaining(.treedocs), description: "Keep treedocs for all remaining conflicts"),
-        ReadmeConflictChoice(action: .cancel, description: "Cancel (discard changes)"),
-    ]
 }

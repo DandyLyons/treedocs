@@ -2,6 +2,8 @@ import ArgumentParser
 import Darwin
 import Rainbow
 
+extension ReadmePopulationDepth: ExpressibleByArgument {}
+
 /// Implements the `treedocs sync` command.
 struct SyncCommand: ParsableCommand {
     /// Command metadata for reconciling state with the filesystem.
@@ -13,6 +15,13 @@ struct SyncCommand: ParsableCommand {
 
     /// Shared repository selection options.
     @OptionGroup var options: RepositoryOptions
+
+    /// Optional scope for copying canonical descriptions into recognized README trees.
+    @Option(
+        name: .long,
+        help: "Populate missing README tree descriptions (children or recursive)."
+    )
+    var populateReadmes: ReadmePopulationDepth?
 
     /// Reconciles the stored tree with the current filesystem and prints the resulting signature.
     mutating func run() throws {
@@ -26,7 +35,8 @@ struct SyncCommand: ParsableCommand {
             at: options.path,
             interactive: interactive,
             missingDescriptionCollector: interactive ? NooraMissingDescriptionCollector() : nil,
-            readmeConflictCollector: interactive ? NooraReadmeConflictCollector() : nil
+            readmeConflictCollector: interactive ? NooraReadmeConflictCollector() : nil,
+            populateReadmes: populateReadmes
         )
         for warning in result.readmeWarnings {
             fputs("Warning: \(warning)\n", stderr)
