@@ -4,19 +4,22 @@ project:
   last_updated: "2026-05-08"
   name: treedocs
   version: 0.1.0
-signature: sha256:f568be235cc7e34c6ef633946c2f91102d5cee5d175afbd94c1ff0449bad5a08
+signature: sha256:2099448973fe856c2149d327e5aca46d7a9ff7eae61dc45cb4eb225fcd2684d6
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
     _doc: GitHub repository automation and workflow configuration.
+    README.md: Overview and documentation for .github/.
     workflows:
       _doc: GitHub Actions workflow definitions.
+      README.md: Overview and documentation for .github/workflows/.
       pages.yml: Deploys the static site in site/ to GitHub Pages using Actions.
   .gitignore: Files and build artifacts ignored by Git.
   .spi.yml: Swift Package Index configuration for package documentation and compatibility
     metadata.
   .vscode:
     _doc: VS Code workspace settings for local development and debugging.
+    README.md: Overview and documentation for .vscode/.
     launch.json: Debug launch configurations for running treedocs from VS Code.
   AGENTS.md: Project instructions and operating notes for AI coding agents.
   DOCS:
@@ -25,11 +28,13 @@ tree:
       _doc: Archived historical project documentation.
       0.1.0 Initial Spec.md: Historical first-release design and implementation-tracking
         draft retained for context; not the current normative spec.
+      README.md: Overview and documentation for DOCS/Archive/.
     Feature Idea - treedocs Git History.md: Brainstorming new features that we could
       add if treedocs inspected the git history and compared it to the treedocs.yaml
       over time.
     Migrating treedocs.yaml 0.1.0 to 0.2.0.md: Migration guide for updating treedocs.yaml
       files from schema 0.1.0 metadata keys to schema 0.2.0 metadata keys.
+    README.md: Overview and documentation for DOCS/.
     Release Strategy.md: Documents CLI and JSON Schema release procedures, including
       GitHub Releases, Homebrew tap publishing, schema immutability, and GitHub Pages
       schema deployment.
@@ -42,6 +47,7 @@ tree:
   README.md: User-facing overview, installation, and command usage documentation.
   Sources:
     _doc: Swift package source code for the treedocs executable.
+    README.md: Overview and documentation for Sources/.
     treedocs:
       _doc: Main treedocs executable target.
       Commands:
@@ -67,6 +73,7 @@ tree:
           paths and descriptions.
         PromptsCommand.swift: Generates maintenance prompts for filling missing treedocs
           descriptions.
+        README.md: Overview and documentation for Sources/treedocs/Commands/.
         ShowCommand.swift: Renders documentation for a single path, including validation
           unless skipped.
         SyncCommand.swift: Reconciles treedocs.yaml with the current filesystem while
@@ -87,6 +94,7 @@ tree:
           in the treedocs.yaml
         PathUtilities.swift: Defines shared errors, string cleanup helpers, and repository-relative
           path utilities.
+        README.md: Overview and documentation for Sources/treedocs/Core/.
         ReadmeConflictCollector.swift: Conflict-resolution protocol and result types
           for README reconciliation.
         ReadmeDocumentation.swift: README frontmatter adapter, reference normalization,
@@ -106,27 +114,33 @@ tree:
         TreedocsService.swift: High-level orchestration layer for CLI workflows.
       Models:
         _doc: Data models representing treedocs.yaml and related configuration.
+        README.md: Overview and documentation for Sources/treedocs/Models/.
         TreedocsConfig.swift: Codable model for treedocs configuration and ignore
           settings.
         TreedocsFile.swift: Codable model for project metadata, signature, and documentation
           tree contents.
+      README.md: Overview and documentation for Sources/treedocs/.
       Resources:
         _doc: Assets included in the app bundle.
+        README.md: Overview and documentation for Sources/treedocs/Resources/.
         descriptions-suggestions.yaml: Default treedocs description suggestions catalog.
       TreeDocs.swift: Executable entry point that wires the root CLI and subcommands
         together.
       treedocs.docc:
         _doc: DocC documentation catalog for generated package documentation.
         GettingStarted.md: DocC tutorial or guide for getting started with treedocs.
+        README.md: Overview and documentation for Sources/treedocs/treedocs.docc/.
         treedocs.md: DocC landing page for the treedocs package documentation.
   Tests:
     _doc: Swift Testing test suite for treedocs behavior.
+    README.md: Overview and documentation for Tests/.
     treedocsTests:
       _doc: Unit and workflow tests for the treedocs package.
       CreateReadmeTests.swift: Tests README stub discovery, rendering, collisions,
         path validation, command parsing, and rollback.
       IgnoreMatcherTests.swift: Tests ignore pattern loading, matching, and negation
         behavior.
+      README.md: Overview and documentation for Tests/treedocsTests/.
       ReadmeDocumentationTests.swift: Focused tests for README metadata mapping, reconciliation,
         references, and transactions.
       ReadmeWorkflowTests.swift: End-to-end tests for README imports, conflicts, cancellation,
@@ -138,31 +152,38 @@ tree:
       WorkflowTests.swift: End-to-end command workflow tests covering common CLI usage.
   contrib:
     _doc: Shared examples and optional integration assets for treedocs users.
+    README.md: Overview and documentation for contrib/.
     homebrew:
       _doc: Homebrew formula templates and tap publishing assets for distributing
         treedocs through Homebrew.
+      README.md: Overview and documentation for contrib/homebrew/.
       treedocs.rb: Template Homebrew formula for building treedocs from source and
         publishing it through the DandyLyons homebrew tap.
     hooks:
       _doc: Suggested Git hook scripts that users can opt into installing.
+      README.md: Overview and documentation for contrib/hooks/.
       pre-commit: Suggested non-interactive Git pre-commit hook for syncing and checking
         treedocs.yaml.
   site:
     _doc: Static files deployed to the project GitHub Pages site.
+    README.md: Overview and documentation for site/.
     index.html: Landing page for the treedocs GitHub Pages site.
     schemas:
       _doc: Public JSON Schema endpoints served by the GitHub Pages site.
       0.1.0:
         _doc: Immutable treedocs schema release 0.1.0.
+        README.md: Overview and documentation for site/schemas/0.1.0/.
         treedocs-0.1.0.schema.json: Versioned resource copy of the 0.1.0 schema bundled
           into the CLI for offline validation.
         treedocs.schema.json: Versioned canonical JSON Schema for treedocs.yaml release
           0.1.0.
       0.2.0:
         _doc: Immutable treedocs schema release 0.2.0.
+        README.md: Overview and documentation for site/schemas/0.2.0/.
         treedocs-0.2.0.schema.json: Versioned resource copy of the 0.2.0 schema bundled
           into the CLI for offline validation.
         treedocs.schema.json: Versioned canonical JSON Schema for treedocs.yaml release
           0.2.0.
+      README.md: Overview and documentation for site/schemas/.
     styles.css: Stylesheet for the treedocs GitHub Pages landing page.
   solo.yml: Solo process definitions for running treedocs build, test, and CLI commands.
