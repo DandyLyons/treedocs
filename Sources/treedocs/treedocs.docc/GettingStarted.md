@@ -59,6 +59,15 @@ readme:
 
 `init` imports recognized metadata. `sync` imports missing values and asks which source to keep when README frontmatter disagrees with `treedocs.yaml`. Non-interactive sync reports conflicts without writing, and `check` reports the same drift without modifying files.
 
+Create a structured README from directory documentation already stored in `treedocs.yaml`:
+
+```bash
+treedocs createREADME Sources/treedocs/Core/
+treedocs createREADME Sources/ --recursive
+```
+
+The recursive form includes the requested directory, respects repository ignore rules, and stops below nested `treedocs.yaml` boundaries. Existing exact `README.md` files are skipped unchanged. New stubs receive folder metadata when available, a deterministic README-file description, and a level-one directory heading. Run `treedocs sync` afterward to add the new files to repository state.
+
 Use `check` in local workflows or CI to detect stale signatures and missing descriptions:
 
 ```bash

@@ -19,6 +19,8 @@ swift build
 treedocs --help # shows root command help
 treedocs init # initializes treedocs.yaml
 treedocs sync # syncs treedocs.yaml with filesystem changes
+treedocs createREADME Sources/ # creates a README stub for Sources/
+treedocs createREADME Sources/ --recursive # creates stubs in eligible descendant directories
 treedocs show . # shows the documentation tree for the current directory
 treedocs explore . # Shows only top-level files and folders with descriptions. 
 treedocs explore ./subfolder ./subfolder2 # The subfolders are expanded while all other folders are collapsed.
@@ -49,7 +51,7 @@ swift test --filter "IgnoreMatcher"
 - Tests live in `Tests/treedocsTests/`
 
 ## Implemented CLI Surface
-- Root subcommands: `init`, `sync`, `check`, `inspect`, `update`, `ls`, `path`
+- Root subcommands: `init`, `sync`, `check`, `show`, `inspect`, `update`, `createREADME`, `config`, `prompts`, `ls`, `explore`, `path`
 - Shared repository option: `-p, --path <path>`
 - Shared interactive opt-out: `--non-interactive`
 - `init` writes `treedocs.yaml` with project metadata, signature, and empty descriptions
@@ -58,6 +60,7 @@ swift test --filter "IgnoreMatcher"
 - `check` reports signature drift and missing descriptions, and respects configured severity
 - `inspect` resolves `_link` chains and can render a subtree recursively
 - `update` supports description changes plus `--add-reference`, `--remove-reference`, `--link`, and `--clear-link`
+- `createREADME` creates structured README stubs from stored directory metadata, supports `-r, --recursive`, skips existing exact `README.md` files, and leaves `treedocs.yaml` unchanged
 - `ls` renders the documentation tree and supports subtree rendering with an optional positional path argument
 - `path` searches both documented paths and descriptions
 - Scanner-backed commands stop at nested `treedocs.yaml` files: the parent keeps the child folder as a delegated directory entry and does not own descendants beneath that boundary

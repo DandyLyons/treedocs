@@ -13,6 +13,7 @@ The CLI centers on a few repository workflows:
 - Initialize `treedocs.yaml` from the current filesystem.
 - Sync stored documentation after files or directories change.
 - Import and reconcile supported `README.md` frontmatter.
+- Materialize stored directory documentation as safe, structured README stubs.
 - Check whether the stored tree is stale or has missing descriptions.
 - Render, inspect, update, and search documented paths.
 

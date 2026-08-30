@@ -158,6 +158,33 @@ struct TreedocsService {
     /// Commits coordinated README and state-file replacements with rollback.
     var transactionWriter: any TransactionalFileWriting = TransactionalFileWriter()
 
+    /// Creates new README stubs exclusively and rolls back partial recursive output.
+    var readmeStubWriter: any ReadmeStubWriting = TransactionalReadmeStubWriter()
+
+    /// Creates one or more README stubs from directory metadata already stored in `treedocs.yaml`.
+    ///
+    /// This workflow treats the state file as read-only. Directories are discovered with the same
+    /// resolved ignore inputs as scanner-backed commands, while nested state files stop recursion.
+    ///
+    /// - Parameters:
+    ///   - rootPath: Selected repository root.
+    ///   - targetPath: Required directory resolved relative to the repository root.
+    ///   - recursive: Whether to include eligible descendant directories.
+    /// - Returns: Created and skipped repository-relative README paths.
+    func createReadmes(at rootPath: String, targetPath: String, recursive: Bool) throws -> CreateReadmeResult {
+        let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
+        let file = try store.load(at: repositoryPaths.stateFile)
+        let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: file.overrides)
+        return try ReadmeStubCreator().create(
+            repositoryPaths: repositoryPaths,
+            targetPath: targetPath,
+            recursive: recursive,
+            file: file,
+            ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns),
+            writer: readmeStubWriter
+        )
+    }
+
     /// Creates a fresh `treedocs.yaml` for a repository.
     ///
     /// The repository is scanned using resolved configuration, initial project metadata is created,

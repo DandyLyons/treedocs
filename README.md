@@ -82,6 +82,8 @@ treedocs check
 treedocs inspect Sources/treedocs --recursive
 treedocs update README.md "Project overview"
 treedocs update Sources/treedocs/Core --add-reference DOCS/schema-cli-usage.md
+treedocs createREADME Sources/treedocs/Core/
+treedocs createREADME Sources/ --recursive
 treedocs show . --full-descriptions
 treedocs explore Sources/ --full-descriptions
 treedocs ls
@@ -128,6 +130,19 @@ Top-level `description` and `references` describe the containing folder. Values 
 The repository-root README can document its own file through `readme.*`. Root-folder documentation is deferred because the current `0.2.0` tree format has no root `_doc` entry; top-level folder fields there produce a non-failing warning. `_link` is not imported from README frontmatter.
 
 When README and `treedocs.yaml` values differ, interactive sync asks which value to keep. Non-interactive sync reports all conflicts, writes nothing, and exits nonzero. `treedocs check` reports pending imports and conflicts without modifying either file. A recognized README without a usable `readme.description` receives a sensible file-description default in `treedocs.yaml`; treedocs-only values are not automatically copied into README frontmatter.
+
+### Create README Stubs
+
+Materialize existing directory documentation from `treedocs.yaml` as a structured README stub:
+
+```bash
+treedocs createREADME Sources/treedocs/Core/
+treedocs createREADME Sources/ --recursive
+```
+
+`createREADME` copies a documented nested folder's non-blank description and de-duplicated references into top-level frontmatter, makes local references relative to the generated README, and always adds a deterministic `readme.description` plus a level-one directory heading. A root README uses the project name and only `readme.*` metadata because the current schema has no root-folder `_doc`.
+
+Recursive creation includes the requested directory, respects the standard excludes and configured ignore files, and stops below nested `treedocs.yaml` boundaries. Existing exact `README.md` files are skipped without being read or changed. All output is rolled back if a later creation fails, `treedocs.yaml` remains unchanged, and the command recommends `treedocs sync` after it creates files.
 
 ## Git Commit Hook
 `treedocs` can run from a Git `pre-commit` hook so commits stop when `treedocs.yaml` is stale or incomplete. This repository vends a suggested hook at `contrib/hooks/pre-commit`; users are responsible for reviewing and installing it in their own repositories.

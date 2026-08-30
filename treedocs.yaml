@@ -4,7 +4,7 @@ project:
   last_updated: "2026-05-08"
   name: treedocs
   version: 0.1.0
-signature: sha256:4423c44475b99cba10540c880977909608a891b6b58f4e641ee1c167adbb4893
+signature: sha256:f568be235cc7e34c6ef633946c2f91102d5cee5d175afbd94c1ff0449bad5a08
 tree:
   .env.schema: Varlock schema defining public release metadata used by automation.
   .github:
@@ -51,6 +51,8 @@ tree:
         Common.swift: Shared CLI options and helpers used by multiple commands.
         ConfigCommand.swift: Implements configuration discovery commands for listing
           treedocs-related files.
+        CreateReadmeCommand.swift: Creates README stubs from stored directory documentation
+          and reports created and skipped files.
         ExploreCommand.swift: Implements the progressive disclosure explore command
           for rendering shallow trees with selected expansion targets.
         InitCommand.swift: Creates an initial treedocs.yaml file for a repository.
@@ -89,6 +91,8 @@ tree:
           for README reconciliation.
         ReadmeDocumentation.swift: README frontmatter adapter, reference normalization,
           and reconciliation logic.
+        ReadmeStubCreator.swift: Discovers eligible directories, renders structured
+          README stubs, and rolls back partial recursive creation.
         TransactionalFileWriter.swift: Revision-checked multi-file writes with rollback
           on failure.
         TreeOperations.swift: Mutates and queries documentation tree entries.
@@ -119,6 +123,8 @@ tree:
     _doc: Swift Testing test suite for treedocs behavior.
     treedocsTests:
       _doc: Unit and workflow tests for the treedocs package.
+      CreateReadmeTests.swift: Tests README stub discovery, rendering, collisions,
+        path validation, command parsing, and rollback.
       IgnoreMatcherTests.swift: Tests ignore pattern loading, matching, and negation
         behavior.
       ReadmeDocumentationTests.swift: Focused tests for README metadata mapping, reconciliation,
