@@ -305,6 +305,11 @@ struct TreeEntry: Equatable {
         documentation?.description
     }
 
+    /// Description prose for rendering and search, excluding the intentional blank sentinel.
+    var descriptionText: String? {
+        description == "_" ? nil : description
+    }
+
     /// The entry's references, or an empty array when it has no documentation.
     var references: [String] {
         documentation?.references ?? []

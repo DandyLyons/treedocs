@@ -312,7 +312,7 @@ struct TreeRenderer {
     ///   - config: Display configuration containing the maximum description length.
     /// - Returns: The description text to render, or `nil` when the entry has no description.
     private func descriptionText(for entry: TreeEntry, config: TreedocsConfig) -> String? {
-        guard let description = entry.description else {
+        guard let description = entry.descriptionText else {
             return nil
         }
 

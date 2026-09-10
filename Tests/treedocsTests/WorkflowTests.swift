@@ -5,6 +5,53 @@ import Rainbow
 
 @Suite("Workflow", .serialized)
 struct WorkflowTests {
+    @Test(arguments: TreedocsSchemaMetadata.supportedVersions)
+    func `Intentional blank survives update and sync without suppressing missing child descriptions`(schemaVersion: String) throws {
+        let workspace = try TestWorkspace()
+        let service = try workspace.service()
+        try workspace.writeFile("Package.swift")
+        try workspace.writeFile("Sources/App.swift")
+        var state = try service.initialize(at: workspace.root.string, force: false)
+        state.schemaVersion = schemaVersion
+        try workspace.saveState(state)
+        for path in ["Package.swift", "Sources/"] {
+            _ = try service.update(
+                at: workspace.root.string, path: path, description: "_",
+                addReferences: [], removeReferences: [], link: nil, clearLink: false
+            )
+        }
+        let collector = StubMissingDescriptionCollector(result: .save([:]))
+        _ = try service.sync(
+            at: workspace.root.string, interactive: true,
+            missingDescriptionCollector: collector
+        )
+        #expect(collector.requestedPaths == ["Sources/App.swift"])
+        let saved = try workspace.loadState()
+        #expect(saved.tree["Package.swift"]?.description == "_")
+        #expect(saved.tree["Sources"]?.description == "_")
+        #expect(try service.check(at: workspace.root.string).missingDescriptions == ["Sources/App.swift"])
+    }
+
+    @Test
+    func `Only the blank sentinel is hidden from rendering and description search`() throws {
+        let tree = ["Package.swift": TreeEntry(description: "_")]
+        let renderer = TreeRenderer()
+        #expect(try renderer.render(tree: tree, subtreePath: nil, config: TreedocsConfig()) == ".\n└── Package.swift")
+        #expect(try renderer.render(tree: tree, subtreePath: "Package.swift", config: TreedocsConfig()) == "Package.swift")
+        let exploration = try renderer.renderExploration(tree: tree, expandedPaths: [], config: TreedocsConfig())
+        #expect(exploration.hasSuffix(".\n└── Package.swift"))
+        #expect(TreeOperations.firstPath(matching: "_", in: tree) == nil)
+        #expect(TreeOperations.firstPath(matching: "_", in: ["a_b": TreeEntry(description: "_")]) == "a_b")
+        for text in ["__", "a_b", "_ explanation"] {
+            let entry = TreeEntry(description: text)
+            #expect(entry.descriptionText == text)
+            #expect(TreeOperations.firstPath(matching: "_", in: ["file": entry]) == "file")
+        }
+        #expect(!TreeEntry(description: "_").needsDescription)
+        #expect(TreeEntry(description: "").needsDescription)
+        #expect(TreeEntry(description: nil).needsDescription)
+    }
+
     @Test
     func `Init creates treedocs.yaml and sync preserves existing descriptions while adding and removing paths`() throws {
         let workspace = try TestWorkspace()

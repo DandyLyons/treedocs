@@ -55,4 +55,8 @@ tree:
   Package.swift: _
 ```
 
-This convention is compatible with schema `0.2.0` because string descriptions are already valid. Empty strings should continue to mean that a description is missing.
+This convention is compatible with schemas `0.1.0` and `0.2.0` because string descriptions are already valid; their published schema files do not need to change. Empty strings continue to mean that a description is missing.
+
+Use `treedocs update Package.swift --description _` to mark a path as intentionally undescribed. Load/save and `sync` preserve the sentinel. `check` and interactive `sync` skip that path when collecting missing descriptions. A directory's `_doc: _` applies only to the directory itself; its children still need descriptions.
+
+Tree output (`show`, `ls`, and `explore`) hides the sentinel, and `path` excludes it from description searches. Underscores in paths remain searchable, and descriptions such as `use_snake_case` remain ordinary prose.

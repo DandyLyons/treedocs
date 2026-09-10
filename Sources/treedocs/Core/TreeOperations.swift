@@ -266,7 +266,7 @@ enum TreeOperations {
         }
 
         return entries.first { _, entry in
-            entry.description?.lowercased().contains(normalizedQuery) == true
+            entry.descriptionText?.lowercased().contains(normalizedQuery) == true
         }?.0
     }
 
