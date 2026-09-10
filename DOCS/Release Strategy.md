@@ -29,6 +29,8 @@ Homebrew distribution should use a dedicated tap repository at `DandyLyons/homeb
 
 The formula template in `contrib/homebrew/treedocs.rb` is for preparing the tap formula. After a release tag exists, add a stable `url` and `sha256` to the tap formula before publishing stable Homebrew install instructions. The source archive SHA can be calculated from the release archive URL, for example with `curl -L <archive-url> | shasum -a 256`.
 
+The formula must install both the executable and `treedocs_treedocs.bundle` under `libexec/`, then create the public command with `bin.write_exec_script`. Keeping the real executable beside its SwiftPM resource bundle avoids resource lookup failures when Homebrew exposes commands from its shared `bin/` directory. Run `brew test dandylyons/tap/treedocs` after installing the candidate formula; its `init` test exercises the bundled schema instead of only checking argument parsing.
+
 ## JSON Schema Releases
 
 The JSON Schema version is the `treedocs.yaml` file-format version stored at root `schema_version`. It is distinct from the CLI release version. A CLI release may support one or more schema versions through bundled schema files and version-aware handling.

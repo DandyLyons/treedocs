@@ -37,6 +37,11 @@ swift test --filter "IgnoreMatcher"
 - Never use `npx`; it can execute unpinned remote packages and is not allowed in this repository.
 - Use the installed `varlock` binary directly for Varlock commands, for example `varlock printenv CURRENT_TREEDOCS_JSONSCHEMA_VERSION`.
 
+## Release Work
+- Before making or preparing any release-related change, read and follow `.agents/skills/releasing-treedocs/SKILL.md`.
+- Do not edit release-related files or state until the skill's required complete reading of `DOCS/Release Strategy.md` is finished.
+- Release-related work includes CLI and JSON Schema versions, release documentation and site content, tags, GitHub Releases, GitHub Pages publication, checksums, Homebrew formulae and tap updates, Mint and mise instructions, and release automation.
+
 ## Codebase Exploration
 - On this computer, `treedocs` is symlinked to the debug binary produced by `swift build`, so `treedocs` is equivalent to `swift run treedocs`. Prefer running `treedocs` directly instead of `swift run treedocs`.
 - When you need to explore or understand the codebase, run `treedocs explore` first. It immediately generates a tree explanation of the repository's files and folders.
