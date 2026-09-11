@@ -1,23 +1,27 @@
 import ArgumentParser
 
-/// Implements the `treedocs createREADME` command.
+/// Implements `treedocs createDoc`, also available through the `createREADME` alias.
+///
+/// Uses the exact-folder source override or `README.md`, preserving existing files and state.
+/// See <doc:GettingStarted> for creation examples.
 struct CreateReadmeCommand: ParsableCommand {
-    /// Command metadata for materializing directory documentation as README stubs.
+    /// Command names and help for materializing directory metadata as selected source files.
     static let configuration = CommandConfiguration(
-        commandName: "createREADME",
-        abstract: "Create README.md stubs from directory documentation in treedocs.yaml.",
-        discussion: "Existing exact README.md files are skipped. Recursive creation respects ignore rules and stops beneath nested treedocs.yaml boundaries."
+        commandName: "createDoc",
+        abstract: "Create configured documentation sources from directory documentation in treedocs.yaml.",
+        discussion: "Uses README.md unless the exact folder has a documentation_sources override. Existing sources are skipped. Recursive creation respects ignore rules and nested treedocs.yaml boundaries.",
+        aliases: ["createREADME"]
     )
 
     /// Shared repository selection options.
     @OptionGroup var options: RepositoryOptions
 
-    /// Directory in which to create README.md, relative to the selected repository root.
+    /// Directory in which to create the selected documentation source.
     @Argument(help: "The target directory, relative to the selected repository root.")
     var directory: String
 
     /// Whether to create stubs in the target and all eligible descendant directories.
-    @Flag(name: .shortAndLong, help: "Create README.md stubs recursively.")
+    @Flag(name: .shortAndLong, help: "Create documentation stubs recursively.")
     var recursive = false
 
     /// Creates the requested stubs and prints a deterministic summary.
@@ -38,12 +42,12 @@ struct CreateReadmeCommand: ParsableCommand {
         if result.createdPaths.isEmpty {
             lines.append("No files created.")
         } else {
-            lines.append("Created README files:")
+            lines.append("Created documentation files:")
             lines.append(contentsOf: result.createdPaths.map { "- \($0)" })
         }
 
         if !result.skippedPaths.isEmpty {
-            lines.append("Skipped existing README files:")
+            lines.append("Skipped existing documentation files:")
             lines.append(contentsOf: result.skippedPaths.map { "- \($0)" })
         }
 

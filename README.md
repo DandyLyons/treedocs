@@ -82,8 +82,8 @@ treedocs check
 treedocs inspect Sources/treedocs --recursive
 treedocs update README.md "Project overview"
 treedocs update Sources/treedocs/Core --add-reference DOCS/schema-cli-usage.md
-treedocs createREADME Sources/treedocs/Core/
-treedocs createREADME Sources/ --recursive
+treedocs createDoc Sources/treedocs/Core/
+treedocs createDoc Sources/ --recursive
 treedocs show . --full-descriptions
 treedocs explore Sources/ --full-descriptions
 treedocs ls
@@ -109,14 +109,30 @@ Non-TTY contexts, such as CI and redirected input/output, skip interactive UI au
 
 ## README Frontmatter
 
-`treedocs init` and `treedocs sync` discover exact `README.md` filenames through the normal scanner, so ignore rules and nested `treedocs.yaml` boundaries still apply. A nested README can document both its containing folder and the README file:
+Schema `0.3.0-WIP` adds exact-folder documentation source overrides:
+
+```yaml
+schema_version: 0.3.0-WIP
+overrides:
+  documentation_sources:
+    .github/: FOLDER.md
+    .: PROJECT.md
+```
+
+Each value is a filename inside that folder. Overrides never inherit: `.github/workflows/` still uses `README.md`. A coexisting `README.md` remains an ordinary tree entry and contributes no frontmatter. Explicit missing or excluded sources are errors; use `treedocs createDoc .github/` to create a missing source. Configuration changes never rename or delete files.
+
+The Markdown contract is separate from the state schema: `file:` describes the selected file, and legacy `readme:` remains accepted with every supported state version. If both occur, their supported metadata must agree; otherwise reconcile them manually before running treedocs. Updates preserve existing key spellings. New stubs use `file:`.
+
+`createREADME` and `--populate-readmes` remain aliases for `createDoc` and `--populate-docs`. See [the staging contract](DOCS/Documentation%20Sources.md) for details.
+
+`treedocs init` and `treedocs sync` discover selected documentation filenames (implicitly `README.md`) through the normal scanner, so ignore rules and nested `treedocs.yaml` boundaries still apply. A nested README can document both its containing folder and the README file:
 
 ```markdown
 ---
 description: Core scanning and reconciliation logic.
 references:
   - ../../DOCS/architecture.md
-readme:
+file:
   description: How the core implementation is organized.
   references:
     - "[Architecture](../../DOCS/architecture.md)"
@@ -133,35 +149,35 @@ tree:
 # Core
 ```
 
-Top-level `description` and `references` describe the containing folder. Values under `readme` describe the `README.md` file itself. The optional `tree` mapping describes any sparse subset of descendants: file metadata appears on the file entry, directory metadata is stored under `_doc`, and nested mappings may recurse to any depth. Tree paths are relative to the README's folder and cannot escape its subtree.
+Top-level `description` and `references` describe the containing folder. Values under `file` describe the `README.md` file itself. The optional `tree` mapping describes any sparse subset of descendants: file metadata appears on the file entry, directory metadata is stored under `_doc`, and nested mappings may recurse to any depth. Tree paths are relative to the README's folder and cannot escape its subtree.
 
 Local references are resolved relative to the README's folder; HTTPS URLs are preserved. Other frontmatter keys and the Markdown body are retained when treedocs updates supported metadata.
 
-The repository-root README can document its own file through `readme.*`. Root-folder documentation is deferred because the current `0.2.0` tree format has no root `_doc` entry; top-level folder fields there produce a non-failing warning. `_link` is not imported from README frontmatter.
+The repository-root README can document its own file through `file.*`. Root-folder documentation is deferred because the current `0.2.0` tree format has no root `_doc` entry; top-level folder fields there produce a non-failing warning. `_link` is not imported from README frontmatter.
 
 When any number of READMEs and `treedocs.yaml` disagree about the same path and field, interactive sync presents every distinct value once. The selected value is written to `treedocs.yaml` and every README that already expresses that field. Non-interactive sync reports all conflicts, writes nothing, and exits nonzero. `treedocs check` reports pending imports and conflicts without modifying files.
 
 README trees remain sparse by default: an omitted descendant means that README has no opinion and is not treated as a deletion. Explicitly populate missing descriptions from the resolved `treedocs.yaml` tree with one of these scopes:
 
 ```bash
-treedocs sync --populate-readmes children
-treedocs sync --populate-readmes recursive
+treedocs sync --populate-docs children
+treedocs sync --populate-docs recursive
 ```
 
-`children` adds immediate child descriptions and `recursive` adds every owned descendant description. Population applies only to recognized READMEs that already contain supported treedocs frontmatter; it never introduces frontmatter into a plain README. Ignore rules and nested `treedocs.yaml` ownership boundaries still apply. A recognized README without a usable `readme.description` receives a sensible file-description default in `treedocs.yaml`.
+`children` adds immediate child descriptions and `recursive` adds every owned descendant description. Population applies only to recognized READMEs that already contain supported treedocs frontmatter; it never introduces frontmatter into a plain README. Ignore rules and nested `treedocs.yaml` ownership boundaries still apply. A recognized README without a usable `file.description` receives a sensible file-description default in `treedocs.yaml`.
 
 ### Create README Stubs
 
 Materialize existing directory documentation from `treedocs.yaml` as a structured README stub:
 
 ```bash
-treedocs createREADME Sources/treedocs/Core/
-treedocs createREADME Sources/ --recursive
+treedocs createDoc Sources/treedocs/Core/
+treedocs createDoc Sources/ --recursive
 ```
 
-`createREADME` copies a documented nested folder's non-blank description and de-duplicated references into top-level frontmatter, makes local references relative to the generated README, and always adds a deterministic `readme.description` plus a level-one directory heading. A root README uses the project name and only `readme.*` metadata because the current schema has no root-folder `_doc`.
+`createDoc` copies a documented nested folder's non-blank description and de-duplicated references into top-level frontmatter, makes local references relative to the generated README, and always adds a deterministic `file.description` plus a level-one directory heading. A root README uses the project name and only `file.*` metadata because the current schema has no root-folder `_doc`.
 
-Recursive creation includes the requested directory, respects the standard excludes and configured ignore files, and stops below nested `treedocs.yaml` boundaries. Existing exact `README.md` files are skipped without being read or changed. All output is rolled back if a later creation fails, `treedocs.yaml` remains unchanged, and the command recommends `treedocs sync` after it creates files.
+Recursive creation includes the requested directory, respects the standard excludes and configured ignore files, and stops below nested `treedocs.yaml` boundaries. Existing exact selected source files are skipped without being read or changed. Direct targets below a nested root must use that root with `--path`. All output is rolled back if a later creation fails, `treedocs.yaml` remains unchanged, and the command recommends `treedocs sync` after it creates files.
 
 ## Git Commit Hook
 `treedocs` can run from a Git `pre-commit` hook so commits stop when `treedocs.yaml` is stale or incomplete. This repository vends a suggested hook at `contrib/hooks/pre-commit`; users are responsible for reviewing and installing it in their own repositories.

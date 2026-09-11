@@ -29,6 +29,9 @@ struct TreedocsSchemaValidator {
         }
 
         let schemaVersion = try schemaVersion(from: parsed)
+        if let root = parsed as? [String: Any], let overrides = root["overrides"] as? [String: Any] {
+            _ = try FolderDocumentationSourceSelection.parse(overrides["documentation_sources"])
+        }
         try validateSupportedFormatsAndReferences(in: parsed)
         let instance = try normalize(parsed, path: "#")
         let schemaJSON = try loadSchema(for: schemaVersion, from: schemaPath)
@@ -89,6 +92,8 @@ struct TreedocsSchemaValidator {
             return "treedocs-0.1.0.schema"
         case TreedocsSchemaMetadata.currentVersion:
             return "treedocs-0.2.0.schema"
+        case TreedocsSchemaMetadata.stagingVersion:
+            return "treedocs-0.3.0-WIP.schema"
         default:
             throw TreeDocsError.message(unsupportedSchemaVersionMessage(version))
         }

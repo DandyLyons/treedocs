@@ -1,5 +1,7 @@
 # treedocs Schema CLI Usage
 
+The opt-in bundled `0.3.0-WIP` schema adds exact-folder `overrides.documentation_sources`. Stable schemas remain unchanged. See [Documentation Sources](Documentation%20Sources.md) for selection rules and the separate `file:`/legacy `readme:` Markdown frontmatter contract.
+
 This note summarizes which parts of `site/schemas/0.2.0/treedocs.schema.json` are currently used by the CLI and which parts are parsed or preserved but not yet meaningfully exposed.
 
 ## Actively Used

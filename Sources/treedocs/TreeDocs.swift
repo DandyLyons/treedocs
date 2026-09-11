@@ -69,6 +69,7 @@ enum TreeDocsMain {
             "show",
             "inspect",
             "update",
+            "createDoc",
             "createREADME",
             "config",
             "prompts",

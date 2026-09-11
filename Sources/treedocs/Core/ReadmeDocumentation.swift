@@ -34,7 +34,10 @@ struct ReadmeDescendantMetadata: Equatable {
     let metadata: ReadmeEntryMetadata
 }
 
-/// A parsed README and the documentation metadata it contributes.
+/// A selected Markdown source and the folder, file, and descendant metadata it contributes.
+///
+/// Source-file metadata may use modern `file:` or legacy `readme:` frontmatter. The loader rejects
+/// conflicting dual mappings before reconciliation; updates retain each existing key spelling.
 struct ReadmeDocumentationSource {
     /// Repository-relative path to the README.
     let path: String
@@ -51,7 +54,7 @@ struct ReadmeDocumentationSource {
     /// Top-level frontmatter fields that document the containing folder.
     let folderMetadata: ReadmeEntryMetadata
 
-    /// Fields nested under `readme` that document the README file itself.
+    /// Fields nested under `file` or legacy `readme` that document the source file itself.
     let readmeMetadata: ReadmeEntryMetadata
 
     /// Sparse descendant fields nested under the optional `tree` mapping.
@@ -68,15 +71,19 @@ struct ReadmeDocumentationSource {
     ///   - value: The resolved description or references.
     ///   - field: The supported frontmatter field to replace.
     ///   - target: Frontmatter location to update.
-    /// - Throws: `TreeDocsError` for mismatched field/value pairs or invalid reference paths.
+    /// - Throws: ``TreeDocsError`` for mismatched field/value pairs or invalid reference paths.
+    /// - Note: Source-file updates keep both `file:` and `readme:` consistent when both are present.
     mutating func set(_ value: ReadmeConflictValue, field: ReadmeMetadataField, target: ReadmeMetadataTarget) throws {
         switch target {
         case .folder:
             try set(value, field: field, in: &document.frontMatter)
         case .readme:
-            var nested = document.frontMatter["readme"]?.mapping ?? FrontMatter()
-            try set(value, field: field, in: &nested)
-            document.frontMatter["readme"] = .object(nested)
+            let keys = ["file", "readme"].filter { document.frontMatter[$0] != nil }
+            for key in keys.isEmpty ? ["file"] : keys {
+                var nested = document.frontMatter[key]?.mapping ?? FrontMatter()
+                try set(value, field: field, in: &nested)
+                document.frontMatter[key] = .object(nested)
+            }
         case let .tree(frontMatterPath, isDirectory):
             var tree = document.frontMatter["tree"]?.mapping ?? FrontMatter()
             try set(
@@ -185,13 +192,13 @@ struct ReadmeDocumentationSource {
     }
 }
 
-/// Loads supported YAML frontmatter from scanner-discovered README files.
+/// Loads supported YAML frontmatter from documentation sources selected by ``TreeScanner``.
 struct ReadmeDocumentationLoader {
     /// Reads and adapts recognized README files beneath a repository root.
     ///
     /// - Parameters:
     ///   - root: Repository root used to resolve scanner-produced paths.
-    ///   - readmePaths: Exact `README.md` paths discovered by ``TreeScanner``.
+    ///   - readmePaths: Selected documentation source paths discovered by ``TreeScanner``.
     /// - Returns: Sources containing a supported folder, README-file, or descendant-tree field.
     /// - Throws: Read failures, `MarkdownUtilitiesCore` parsing failures, or supported-field validation errors.
     func load(root: Path, readmePaths: [String]) throws -> [ReadmeDocumentationSource] {
@@ -202,13 +209,18 @@ struct ReadmeDocumentationLoader {
         }
     }
 
-    /// Adapts one README while delegating Markdown and frontmatter parsing to `MarkdownUtilitiesCore`.
+    /// Adapts a selected source using `MarkdownUtilitiesCore` for Markdown and frontmatter parsing.
+    ///
+    /// Modern `file:` and legacy `readme:` mappings describe the source itself, independently of its
+    /// filename or the state schema version. Dual mappings must agree on supported metadata after
+    /// normalization, including references compared as sets.
     ///
     /// - Parameters:
     ///   - source: Complete README source text.
     ///   - relativePath: Repository-relative path used for diagnostics and reference resolution.
     /// - Returns: A documentation source, or `nil` when YAML frontmatter has no supported metadata.
-    /// - Throws: `TreeDocsError` when YAML frontmatter is malformed or a supported field has the wrong type.
+    /// - Throws: ``TreeDocsError`` when YAML frontmatter is malformed, a supported field has the
+    ///   wrong type, or `file:` and `readme:` disagree.
     func parse(source: String, relativePath: String) throws -> ReadmeDocumentationSource? {
         guard source.hasPrefix("---\n") else {
             return nil
@@ -228,10 +240,22 @@ struct ReadmeDocumentationLoader {
         let folderPath = RelativePath.components(for: relativePath).dropLast().joined(separator: "/")
         let folderMetadata = try metadata(from: document.frontMatter, label: relativePath, folderPath: folderPath)
 
+        if let fileValue = document.frontMatter["file"], let legacy = document.frontMatter["readme"] {
+            guard let fileMapping = fileValue.mapping, let legacyMapping = legacy.mapping else {
+                throw TreeDocsError.message("Invalid YAML frontmatter in \(relativePath): file and readme must be mappings.")
+            }
+            let modern = try metadata(from: fileMapping, label: "\(relativePath) file", folderPath: folderPath)
+            let old = try metadata(from: legacyMapping, label: "\(relativePath) readme", folderPath: folderPath)
+            guard modern.description == old.description,
+                  modern.referencesPresent == old.referencesPresent,
+                  Set(modern.references) == Set(old.references) else {
+                throw TreeDocsError.message("Conflicting file and readme metadata in \(relativePath). Combine the metadata under file before retrying.")
+            }
+        }
         let readmeMetadata: ReadmeEntryMetadata
-        if let readmeValue = document.frontMatter["readme"] {
+        if let readmeValue = document.frontMatter["file"] ?? document.frontMatter["readme"] {
             guard let readmeMapping = readmeValue.mapping else {
-                throw TreeDocsError.message("Invalid YAML frontmatter in \(relativePath): readme must be a mapping.")
+                throw TreeDocsError.message("Invalid YAML frontmatter in \(relativePath): file/readme must be a mapping.")
             }
             readmeMetadata = try metadata(from: readmeMapping, label: "\(relativePath) readme", folderPath: folderPath)
         } else {

@@ -75,26 +75,42 @@ struct TransactionalReadmeStubWriter: ReadmeStubWriting {
     }
 }
 
-/// Summary of one `createREADME` operation.
+/// Created and skipped source files from `createDoc` or its `createREADME` alias.
 struct CreateReadmeResult: Equatable {
-    /// Repository-relative README paths created by the command.
+    /// Repository-relative selected source paths created by the command.
     var createdPaths: [String]
 
-    /// Repository-relative exact `README.md` files that already existed.
+    /// Repository-relative selected source paths that already existed with the exact filename spelling.
     var skippedPaths: [String]
 }
 
-/// Discovers eligible directories and renders README stubs from stored treedocs metadata.
+/// Discovers eligible directories and renders selected documentation sources from stored metadata.
 struct ReadmeStubCreator {
     private let fileManager = FileManager.default
 
-    /// Creates README stubs beneath a selected repository without modifying its state file.
+    /// Creates selected documentation sources without modifying the repository's state file.
+    ///
+    /// Existing sources are skipped. New stubs use `file:` frontmatter, folder-relative references,
+    /// and a directory heading. Rendering completes before the writer receives any creations.
+    ///
+    /// - Parameters:
+    ///   - repositoryPaths: Validated repository paths used to resolve targets.
+    ///   - targetPath: Directory to document, relative to the root or absolute within the repository.
+    ///   - recursive: Whether to include eligible descendant directories.
+    ///   - file: Canonical state supplying project and folder metadata.
+    ///   - ignoreMatcher: Resolved exclusions for directories and destination files.
+    ///   - sources: The same resolved ``FolderDocumentationSourceSelection`` used by the scanner.
+    ///   - writer: Applies staged creations without overwriting existing files.
+    /// - Returns: Created and skipped paths in discovery order.
+    /// - Throws: Invalid or excluded targets, targets below nested roots, excluded explicit sources,
+    ///   reference conversion errors, or filesystem and writer failures.
     func create(
         repositoryPaths: RepositoryPaths,
         targetPath: String,
         recursive: Bool,
         file: TreedocsFile,
         ignoreMatcher: IgnoreMatcher,
+        sources: FolderDocumentationSourceSelection = FolderDocumentationSourceSelection(),
         writer: any ReadmeStubWriting
     ) throws -> CreateReadmeResult {
         let target = try resolveTarget(targetPath, in: repositoryPaths)
@@ -109,10 +125,17 @@ struct ReadmeStubCreator {
         var skippedPaths: [String] = []
 
         for directoryPath in directoryPaths {
-            let readmePath = directoryPath.isEmpty ? "README.md" : directoryPath + "/README.md"
+            let filename = sources.filename(for: directoryPath)
+            let readmePath = directoryPath.isEmpty ? filename : directoryPath + "/" + filename
+            if ignoreMatcher.shouldIgnore(relativePath: readmePath, isDirectory: false) {
+                if sources.isExplicit(directoryPath) {
+                    throw TreeDocsError.message("Selected documentation source \(readmePath) is excluded. Adjust ignore rules or overrides.documentation_sources.")
+                }
+                continue
+            }
             let destination = repositoryPaths.root + Path(readmePath)
             let directory = directoryPath.isEmpty ? repositoryPaths.root : repositoryPaths.root + Path(directoryPath)
-            if try containsExactReadme(in: directory) {
+            if try containsExactReadme(in: directory, filename: filename) {
                 skippedPaths.append(readmePath)
                 continue
             }
@@ -172,6 +195,17 @@ struct ReadmeStubCreator {
         ignoreMatcher: IgnoreMatcher
     ) throws -> [String] {
         let targetRelativePath = relativePath(for: target, root: root)
+        let components = RelativePath.components(for: targetRelativePath)
+        for index in components.indices {
+            let count = index + 1
+            let ancestor = components.prefix(count).joined(separator: "/")
+            if ignoreMatcher.shouldIgnore(relativePath: ancestor, isDirectory: true) {
+                throw TreeDocsError.message("Documentation target \(ancestor)/ is excluded. Adjust ignore rules before creating documentation.")
+            }
+            if count < components.count, containsStateFile(root + Path(ancestor)) {
+                throw TreeDocsError.message("Documentation target belongs to nested root \(ancestor)/. Select that repository with --path.")
+            }
+        }
         guard recursive else {
             return [targetRelativePath]
         }
@@ -267,7 +301,7 @@ struct ReadmeStubCreator {
             ? "Project overview and documentation."
             : "Overview and documentation for \(directoryPath)/."
         entries.append((
-            "readme",
+            "file",
             .object(FrontMatter([("description", .string(readmeDescription))]))
         ))
 
@@ -291,12 +325,12 @@ struct ReadmeStubCreator {
         (directory + Path("treedocs.yaml")).isFile
     }
 
-    /// Checks the directory entry spelling so differently cased Markdown files are never classified as `README.md`.
-    private func containsExactReadme(in directory: Path) throws -> Bool {
-        guard try fileManager.contentsOfDirectory(atPath: directory.string).contains("README.md") else {
+    /// Checks the selected filename's exact spelling, including on case-insensitive filesystems.
+    private func containsExactReadme(in directory: Path, filename: String) throws -> Bool {
+        guard try fileManager.contentsOfDirectory(atPath: directory.string).contains(filename) else {
             return false
         }
-        return (directory + Path("README.md")).isFile
+        return (directory + Path(filename)).isFile
     }
 
     private func relativePath(for path: Path, root: Path) -> String {

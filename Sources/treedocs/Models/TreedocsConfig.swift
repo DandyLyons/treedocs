@@ -21,6 +21,12 @@ struct TreedocsConfig: Equatable {
     /// Additional ignore patterns for the scanner.
     var exclude: [String]?
 
+    /// Exact-folder documentation filenames, keyed by `.` or a relative directory path ending in `/`.
+    ///
+    /// An omitted mapping inherits the earlier configuration layer; an empty mapping clears it.
+    /// Individual folder selections never inherit into descendants. See ``FolderDocumentationSourceSelection``.
+    var documentationSources: [String: String]?
+
     /// Whether `.gitignore` should contribute ignore patterns.
     var useGitignore: Bool?
 
@@ -57,6 +63,7 @@ struct TreedocsConfig: Equatable {
     ///
     /// - Parameters:
     ///   - exclude: Additional ignore patterns for the scanner.
+    ///   - documentationSources: Validated exact-folder source overrides, or `nil` to inherit the earlier layer.
     ///   - useGitignore: Whether `.gitignore` should be loaded.
     ///   - maxDescriptionLength: Maximum rendered description length.
     ///   - indentSize: Number of spaces per rendered indentation level.
@@ -69,6 +76,7 @@ struct TreedocsConfig: Equatable {
     ///   - aiModel: Optional AI model identifier.
     init(
         exclude: [String]? = nil,
+        documentationSources: [String: String]? = nil,
         useGitignore: Bool? = nil,
         maxDescriptionLength: Int? = nil,
         indentSize: Int? = nil,
@@ -80,6 +88,7 @@ struct TreedocsConfig: Equatable {
         aiProvider: String? = nil,
         aiModel: String? = nil
     ) {
+        self.documentationSources = documentationSources
         self.exclude = exclude
         self.useGitignore = useGitignore
         self.maxDescriptionLength = maxDescriptionLength
@@ -119,6 +128,7 @@ struct TreedocsConfig: Equatable {
         guard let other else { return self }
         return TreedocsConfig(
             exclude: other.exclude ?? exclude,
+            documentationSources: other.documentationSources ?? documentationSources,
             useGitignore: other.useGitignore ?? useGitignore,
             maxDescriptionLength: other.maxDescriptionLength ?? maxDescriptionLength,
             indentSize: other.indentSize ?? indentSize,
@@ -139,7 +149,7 @@ struct TreedocsConfig: Equatable {
     ///
     /// - Parameter value: The raw YAML value to parse.
     /// - Returns: Parsed configuration, or `nil` when no configuration was provided.
-    /// - Throws: `TreeDocsError` when the YAML value is present but not a mapping.
+    /// - Throws: ``TreeDocsError`` when configuration is not a mapping or documentation source overrides are invalid.
     static func fromYAML(_ value: Any?) throws -> TreedocsConfig? {
         guard let value else { return nil }
         guard let mapping = value as? [String: Any] else {
@@ -148,6 +158,7 @@ struct TreedocsConfig: Equatable {
 
         return TreedocsConfig(
             exclude: parseStringArray(mapping["exclude"]),
+            documentationSources: try FolderDocumentationSourceSelection.parse(mapping["documentation_sources"]),
             useGitignore: parseBool(mapping["use_gitignore"]),
             maxDescriptionLength: parseInt(mapping["max_description_length"]),
             indentSize: parseInt(mapping["indent_size"]),
@@ -170,6 +181,7 @@ struct TreedocsConfig: Equatable {
     func toYAMLValue() -> [String: Any] {
         var mapping: [String: Any] = [:]
 
+        if let documentationSources { mapping["documentation_sources"] = documentationSources }
         if let exclude {
             mapping["exclude"] = exclude
         }

@@ -9,8 +9,11 @@ enum TreedocsSchemaMetadata {
     /// The current treedocs file-format schema version.
     static let currentVersion = "0.2.0"
 
+    /// Opt-in staging contract for schema-affecting 0.3 work.
+    static let stagingVersion = "0.3.0-WIP"
+
     /// Schema versions this CLI can read and validate.
-    static let supportedVersions = [v0_1_0, currentVersion]
+    static let supportedVersions = [v0_1_0, currentVersion, stagingVersion]
 
     /// Schema versions that remain supported but should be migrated.
     static let deprecatedVersions = [v0_1_0]
@@ -477,6 +480,9 @@ struct TreedocsFile: Equatable {
         let project = ProjectMetadata.fromYAML(mapping["project"]) ?? ProjectMetadata()
         let schemaVersion = parseString(mapping["schema_version"]) ?? TreedocsSchemaMetadata.currentVersion
         let overrides = try TreedocsConfig.fromYAML(mapping["overrides"])
+        if overrides?.documentationSources != nil, schemaVersion != TreedocsSchemaMetadata.stagingVersion {
+            throw TreeDocsError.message("documentation_sources requires schema_version: 0.3.0-WIP.")
+        }
         let signature = parseString(mapping["signature"])
 
         var tree: [String: TreeEntry] = [:]

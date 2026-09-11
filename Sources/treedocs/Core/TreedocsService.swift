@@ -161,16 +161,18 @@ struct TreedocsService {
     /// Creates new README stubs exclusively and rolls back partial recursive output.
     var readmeStubWriter: any ReadmeStubWriting = TransactionalReadmeStubWriter()
 
-    /// Creates one or more README stubs from directory metadata already stored in `treedocs.yaml`.
+    /// Creates selected documentation sources from directory metadata already stored in `treedocs.yaml`.
     ///
     /// This workflow treats the state file as read-only. Directories are discovered with the same
     /// resolved ignore inputs as scanner-backed commands, while nested state files stop recursion.
+    /// Uses ``FolderDocumentationSourceSelection`` for exact-folder overrides and implicit README defaults.
     ///
     /// - Parameters:
     ///   - rootPath: Selected repository root.
     ///   - targetPath: Required directory resolved relative to the repository root.
     ///   - recursive: Whether to include eligible descendant directories.
-    /// - Returns: Created and skipped repository-relative README paths.
+    /// - Returns: Created and skipped repository-relative source paths.
+    /// - Throws: State or configuration errors, invalid or excluded targets, or source creation failures.
     func createReadmes(at rootPath: String, targetPath: String, recursive: Bool) throws -> CreateReadmeResult {
         let repositoryPaths = try RepositoryPaths(rootPath: rootPath)
         let file = try store.load(at: repositoryPaths.stateFile)
@@ -181,6 +183,7 @@ struct TreedocsService {
             recursive: recursive,
             file: file,
             ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns),
+            sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]),
             writer: readmeStubWriter
         )
     }
@@ -203,7 +206,7 @@ struct TreedocsService {
         }
 
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: nil)
-        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns), sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]))
         let readmes = try readmeLoader.load(root: repositoryPaths.root, readmePaths: scan.readmePaths)
         let reconciliation = readmeReconciler.reconcile(sources: readmes, tree: scan.tree)
         if !reconciliation.conflicts.isEmpty {
@@ -268,7 +271,7 @@ struct TreedocsService {
         let originalStateSource: String = try repositoryPaths.stateFile.read()
         let current = try store.load(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
-        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns), sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]))
         let changes = SyncChanges(
             addedPaths: TreeOperations.missingPaths(stored: current.tree, scanned: scan.tree),
             removedPaths: TreeOperations.extraPaths(stored: current.tree, scanned: scan.tree),
@@ -389,7 +392,7 @@ struct TreedocsService {
         let schemaErrors = schemaValidationErrors(at: repositoryPaths.stateFile)
         let current = try store.loadWithoutSchemaValidation(at: repositoryPaths.stateFile)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: current.overrides)
-        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns), sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]))
         let readmes = try readmeLoader.load(root: repositoryPaths.root, readmePaths: scan.readmePaths)
         let reconciliation = readmeReconciler.reconcile(sources: readmes, tree: current.tree)
         let missingDescriptions = TreeOperations.missingDescriptionPaths(in: current.tree)
@@ -484,7 +487,7 @@ struct TreedocsService {
         var file = try store.load(at: repositoryPaths.stateFile)
         let normalizedPath = RelativePath.normalize(path)
         let loaded = try configLoader.load(root: repositoryPaths.root, stateOverrides: file.overrides)
-        _ = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        _ = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns), sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]))
 
         let updated = TreeOperations.updateEntry(at: normalizedPath, in: &file.tree) { entry in
             var documentation = entry.documentation ?? EntryDocumentation()
@@ -511,7 +514,7 @@ struct TreedocsService {
             throw TreeDocsError.message("Path not found in treedocs tree: \(normalizedPath)")
         }
 
-        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+        let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns), sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]))
         file.signature = scan.signature
         try store.save(file, at: repositoryPaths.stateFile)
         return file
@@ -579,7 +582,7 @@ struct TreedocsService {
                 lines.append(scopedDiscrepancyText(subtreePath: normalizedPath, subtreeHasIssues: subtreeHasIssues, tree: file.tree).yellow.bold)
 
                 if report.hasSignatureDrift {
-                    let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns))
+                    let scan = try scanner.scan(root: repositoryPaths.root, ignoreMatcher: IgnoreMatcher(patterns: loaded.ignorePatterns), sources: FolderDocumentationSourceSelection(overrides: loaded.config.documentationSources ?? [:]))
                     displayTree = TreeOperations.mergePreservingMetadata(scanned: scan.tree, existing: file.tree)
                     let status = report.severity == .warn ? TreeRenderer.EntryStatus.warning : .error
                     for path in report.missingPaths where isPath(path, inside: normalizedPath) {

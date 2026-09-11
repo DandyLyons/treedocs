@@ -19,9 +19,9 @@ The generated file contains project metadata, a structural signature, and a recu
 Use `update` to add descriptions, references, or links for documented entries:
 
 ```bash
-treedocs update Sources/treedocs/Core "Core scanning, rendering, and config logic"
+treedocs update Sources/treedocs/Core/ "Core scanning, rendering, and config logic"
 treedocs update README.md --add-reference DOCS/schema-cli-usage.md
-treedocs update Sources/treedocs/Commands --link Sources/treedocs/TreeDocs.swift
+treedocs update Sources/treedocs/Commands/ --link Sources/treedocs/TreeDocs.swift
 ```
 
 Descriptions are stored inline in `treedocs.yaml`. References and `_link` targets use mapping entries when a path needs more metadata than plain text.
@@ -45,12 +45,14 @@ Non-TTY contexts skip interactive UI automatically.
 
 ## Import README Documentation
 
-A nested `README.md` can document both its containing folder and itself. Top-level `description` and `references` fields describe the folder; fields inside `readme` describe the file:
+Documentation sources default to `README.md`. With opt-in state schema `0.3.0-WIP`, `overrides.documentation_sources` can map an exact folder such as `.github/` to `FOLDER.md`; descendants keep their own defaults. A coexisting README remains an ordinary file. Missing or excluded explicit sources are errors. `createDoc` and `--populate-docs` respect the selection; `createREADME` and `--populate-readmes` remain aliases. Legacy `readme:` frontmatter is still accepted, but if both `file:` and `readme:` occur their supported metadata must agree.
+
+A nested `README.md` can document both its containing folder and itself. Top-level `description` and `references` fields describe the folder; fields inside `file` describe the file:
 
 ```markdown
 ---
 description: Core repository services.
-readme:
+file:
   description: Guide to the core implementation.
 tree:
   ReadmeDocumentation.swift:
@@ -72,8 +74,8 @@ The optional `tree` mapping can document any sparse subset of descendants. File 
 Normal sync leaves omitted README entries alone. Explicitly copy missing canonical descriptions into recognized README trees at either depth:
 
 ```bash
-treedocs sync --populate-readmes children
-treedocs sync --populate-readmes recursive
+treedocs sync --populate-docs children
+treedocs sync --populate-docs recursive
 ```
 
 Population does not add frontmatter to plain READMEs and stops at ignore and nested ownership boundaries.
@@ -81,11 +83,11 @@ Population does not add frontmatter to plain READMEs and stops at ignore and nes
 Create a structured README from directory documentation already stored in `treedocs.yaml`:
 
 ```bash
-treedocs createREADME Sources/treedocs/Core/
-treedocs createREADME Sources/ --recursive
+treedocs createDoc Sources/treedocs/Core/
+treedocs createDoc Sources/ --recursive
 ```
 
-The recursive form includes the requested directory, respects repository ignore rules, and stops below nested `treedocs.yaml` boundaries. Existing exact `README.md` files are skipped unchanged. New stubs receive folder metadata when available, a deterministic README-file description, and a level-one directory heading. Run `treedocs sync` afterward to add the new files to repository state.
+The recursive form includes the requested directory, respects repository ignore rules, and stops below nested `treedocs.yaml` boundaries. Existing files with the exact selected filename are skipped unchanged. New stubs receive folder metadata when available, a deterministic file description under `file:`, and a level-one directory heading. Run `treedocs sync` afterward to add the new files to repository state.
 
 Use `check` in local workflows or CI to detect stale signatures and missing descriptions:
 
@@ -99,13 +101,13 @@ Render the whole tree or a subtree with `ls`:
 
 ```bash
 treedocs ls
-treedocs ls Sources/treedocs
+treedocs ls Sources/treedocs/
 ```
 
 Inspect one entry when you need references, link resolution, or recursive child output:
 
 ```bash
-treedocs inspect Sources/treedocs --recursive
+treedocs inspect Sources/treedocs/ --recursive
 ```
 
 Find a documented path from a query with `path`:

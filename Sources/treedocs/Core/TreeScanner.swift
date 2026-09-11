@@ -16,7 +16,7 @@ struct TreeScanResult {
     /// Child directories that contain their own `treedocs.yaml` state file.
     var nestedBoundaries: [String]
 
-    /// Visible README files eligible for frontmatter inspection.
+    /// Visible selected documentation sources eligible for frontmatter inspection.
     var readmePaths: [String]
 
     /// The stable signature for `normalizedPaths`.
@@ -56,20 +56,32 @@ struct TreeScanner {
     /// - Parameters:
     ///   - root: The repository root to scan.
     ///   - ignoreMatcher: The matcher used to skip standard and configured excluded paths.
+    ///   - sources: Exact-folder source selection; omitted selection uses `README.md` everywhere.
     /// - Returns: The scanned tree and normalized paths used for its signature.
-    /// - Throws: Filesystem errors from enumerating directories.
-    func scan(root: Path, ignoreMatcher: IgnoreMatcher) throws -> TreeScanResult {
+    /// - Throws: Filesystem enumeration errors, or ``TreeDocsError`` for missing or excluded explicit
+    ///   sources or source folders. Overrides inside nested documentation roots are not inspected.
+    func scan(root: Path, ignoreMatcher: IgnoreMatcher, sources: FolderDocumentationSourceSelection = FolderDocumentationSourceSelection()) throws -> TreeScanResult {
         var nestedBoundaries: [String] = []
         var readmePaths: [String] = []
         let tree = try buildTree(
             root: root,
             relativePath: "",
             ignoreMatcher: ignoreMatcher,
+            sources: sources,
             nestedBoundaries: &nestedBoundaries,
             readmePaths: &readmePaths
         )
         var normalizedPaths: [String] = []
         TreeOperations.collectNormalizedPaths(in: tree, into: &normalizedPaths)
+        for folder in sources.overrides.keys.sorted() where folder != "." {
+            let path = String(folder.dropLast())
+            if nestedBoundaries.contains(where: { path == $0 || path.hasPrefix($0 + "/") }) {
+                continue
+            }
+            guard TreeOperations.entry(at: path, in: tree)?.isDirectory == true else {
+                throw TreeDocsError.message("Documentation source folder \(folder) is missing, excluded, or is not a directory. Adjust ignore rules or overrides.documentation_sources.")
+            }
+        }
         return TreeScanResult(
             tree: tree,
             normalizedPaths: normalizedPaths,
@@ -93,11 +105,22 @@ struct TreeScanner {
         root: Path,
         relativePath: String,
         ignoreMatcher: IgnoreMatcher,
+        sources: FolderDocumentationSourceSelection,
         nestedBoundaries: inout [String],
         readmePaths: inout [String]
     ) throws -> [String: TreeEntry] {
         let absolutePath = relativePath.isEmpty ? root : root + Path(relativePath)
         let childNames = try fileManager.contentsOfDirectory(atPath: absolutePath.string).sorted()
+        let selectedName = sources.filename(for: relativePath)
+        let selectedPath = relativePath.isEmpty ? selectedName : relativePath + "/" + selectedName
+        if sources.isExplicit(relativePath) {
+            if ignoreMatcher.shouldIgnore(relativePath: selectedPath, isDirectory: false) {
+                throw TreeDocsError.message("Selected documentation source \(selectedPath) is excluded. Adjust ignore rules or overrides.documentation_sources.")
+            }
+            guard childNames.contains(selectedName), (root + Path(selectedPath)).isFile else {
+                throw TreeDocsError.message("Selected documentation source \(selectedPath) is missing or is not a file. Run treedocs createDoc for this folder, create the file, or change overrides.documentation_sources.")
+            }
+        }
         var result: [String: TreeEntry] = [:]
 
         for childName in childNames {
@@ -120,12 +143,13 @@ struct TreeScanner {
                     root: root,
                     relativePath: childRelativePath,
                     ignoreMatcher: ignoreMatcher,
+                    sources: sources,
                     nestedBoundaries: &nestedBoundaries,
                     readmePaths: &readmePaths
                 )
                 result[childName] = TreeEntry(description: "", children: children, isDirectory: true)
             } else {
-                if childName == "README.md" {
+                if childName == selectedName {
                     readmePaths.append(childRelativePath)
                 }
                 result[childName] = TreeEntry(description: "")

@@ -16,10 +16,12 @@ struct SyncCommand: ParsableCommand {
     /// Shared repository selection options.
     @OptionGroup var options: RepositoryOptions
 
-    /// Optional scope for copying canonical descriptions into recognized README trees.
+    /// Optional depth for copying missing canonical descriptions into selected sources' frontmatter.
+    ///
+    /// Both `--populate-docs` and the legacy `--populate-readmes` spelling use the same source selection.
     @Option(
-        name: .long,
-        help: "Populate missing README tree descriptions (children or recursive)."
+        name: [.customLong("populate-docs"), .customLong("populate-readmes")],
+        help: "Populate missing tree descriptions in selected documentation sources (children or recursive)."
     )
     var populateReadmes: ReadmePopulationDepth?
 

@@ -16,16 +16,16 @@
 ## Commands
 ```bash
 swift build
-treedocs --help # shows root command help
-treedocs init # initializes treedocs.yaml
-treedocs sync # syncs treedocs.yaml with filesystem changes
-treedocs sync --populate-readmes children # copies immediate child descriptions into recognized README trees
-treedocs sync --populate-readmes recursive # copies all owned descendant descriptions into recognized README trees
-treedocs createREADME Sources/ # creates a README stub for Sources/
-treedocs createREADME Sources/ --recursive # creates stubs in eligible descendant directories
-treedocs show . # shows the documentation tree for the current directory
-treedocs explore . # Shows only top-level files and folders with descriptions. 
-treedocs explore ./subfolder ./subfolder2 # The subfolders are expanded while all other folders are collapsed.
+swift run treedocs --help # shows root command help
+swift run treedocs init # initializes treedocs.yaml
+swift run treedocs sync # syncs treedocs.yaml with filesystem changes
+swift run treedocs sync --populate-docs children # copies immediate child descriptions into recognized documentation sources
+swift run treedocs sync --populate-docs recursive # copies all owned descendant descriptions into recognized documentation sources
+swift run treedocs createDoc Sources/ # creates the selected documentation source for Sources/
+swift run treedocs createDoc Sources/ --recursive # creates stubs in eligible descendant directories
+swift run treedocs show . # shows the documentation tree for the current directory
+swift run treedocs explore . # shows only top-level files and folders with descriptions
+swift run treedocs explore ./subfolder/ ./subfolder2/ # expands the selected folders while all others are collapsed
 swift test
 swift test --filter "Workflow"
 swift test --filter "Schema and Config"
@@ -43,9 +43,9 @@ swift test --filter "IgnoreMatcher"
 - Release-related work includes CLI and JSON Schema versions, release documentation and site content, tags, GitHub Releases, GitHub Pages publication, checksums, Homebrew formulae and tap updates, Mint and mise instructions, and release automation.
 
 ## Codebase Exploration
-- On this computer, `treedocs` is symlinked to the debug binary produced by `swift build`, so `treedocs` is equivalent to `swift run treedocs`. Prefer running `treedocs` directly instead of `swift run treedocs`.
-- When you need to explore or understand the codebase, run `treedocs explore` first. It immediately generates a tree explanation of the repository's files and folders.
-  - Tip: Use `treedocs show <path>` to focus on a specific subtree
+- Always invoke the CLI from this checkout with `swift run treedocs` so SwiftPM builds and runs the latest source. Do not rely on a plain `treedocs` command or a previously built binary.
+- When you need to explore or understand the codebase, run `swift run treedocs explore` first. It immediately generates a tree explanation of the repository's files and folders.
+  - Tip: Use `swift run treedocs show <path>` to focus on a specific subtree
 
 ## Path Conventions
 - Use explicit trailing slashes for all paths that refer to directories, including examples, documentation, config snippets, and CLI help text. Bare `.`, `..`, and `~` are exceptions and do not need trailing slashes.
@@ -58,6 +58,8 @@ swift test --filter "IgnoreMatcher"
 - Tests live in `Tests/treedocsTests/`
 
 ## Implemented CLI Surface
+- `createDoc` creates the selected documentation source; `createREADME` remains an alias. `sync --populate-docs` retains `--populate-readmes` as an alias.
+- Opt-in schema `0.3.0-WIP` supports `overrides.documentation_sources` with exact folder keys (`.` for root, otherwise trailing `/`) and filename values. `README.md` remains the implicit default without inheritance. New source stubs use `file:` metadata; legacy `readme:` remains supported, and conflicting dual mappings are errors.
 - Root subcommands: `init`, `sync`, `check`, `show`, `inspect`, `update`, `createREADME`, `config`, `prompts`, `ls`, `explore`, `path`
 - Shared repository option: `-p, --path <path>`
 - Shared interactive opt-out: `--non-interactive`

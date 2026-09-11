@@ -139,11 +139,11 @@ struct CreateReadmeTests {
         #expect(!(workspace.root + Path("Docs/.build/README.md")).exists)
         #expect(!(external.root + Path("Outside/README.md")).exists)
         #expect(CreateReadmeCommand.summaryLines(for: result) == [
-            "Created README files:",
+            "Created documentation files:",
             "- Docs/README.md",
             "- Docs/Boundary/README.md",
             "- Docs/Visible/README.md",
-            "Skipped existing README files:",
+            "Skipped existing documentation files:",
             "- Docs/Existing/README.md",
             "Created 3, skipped 1.",
             "Next step: run `treedocs sync`.",
@@ -192,7 +192,7 @@ struct CreateReadmeTests {
         #expect(result == CreateReadmeResult(createdPaths: [], skippedPaths: ["Docs/README.md"]))
         #expect(CreateReadmeCommand.summaryLines(for: result) == [
             "No files created.",
-            "Skipped existing README files:",
+            "Skipped existing documentation files:",
             "- Docs/README.md",
             "Created 0, skipped 1.",
         ])
